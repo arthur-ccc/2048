@@ -15,7 +15,7 @@ Após a intalação, reinicie o terminal e execute `ghcup --version` para testar
 > **`ghcup install ghc latest`**<br>
 > **`ghcup set ghc latest`**
 >
-> **`ghcup install cabal 3.12.1.0`**
-> **`ghcup set cabal 3.12.1.0`**<br>
+> **`ghcup install cabal 3.12.1.0`**<br>
+> **`ghcup set cabal 3.12.1.0`**
 
 Tente executar novamente os comandos para verificar se os downloads foram executados corretamente.
