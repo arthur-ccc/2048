@@ -50,7 +50,7 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable haskell
+executable haskell2048
     -- Import common warning flags.
     import:           warnings
 
