@@ -60,7 +60,8 @@ Confirme as alterações clicando em **OK** até que as janelas se fechem.
 
 Pronto! Agora, reinicie o terminal do Windows e abra o **terminal do _MSYS2_** para finalizarmos, simplesmente executando **`msys2`**
 
-No terminal do _MSYS2_, execute e aguarde a instalação: **`pacman -S mingw-w64-x86_64-freeglut`**
+No terminal do _MSYS2_, execute: **`$ pacman -Syu`** e depois
+**`pacman -S mingw-w64-x86_64-freeglut`** e aguarde instalação.
 
 Agora tente compilar e executar o **`app`** novamente.
 De volta ao terminal do Windows, execute:
