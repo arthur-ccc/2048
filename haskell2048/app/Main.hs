@@ -16,7 +16,7 @@ renderizar estado = pictures [desenhaTabuleiro, desenhaPecas estado (tamanhoCelu
 mover :: (Int, Int, Int) -> Event -> [(Int, Int, Int)] -> [(Int, Int, Int)]
 mover novaPeca (EventKey (SpecialKey KeyUp)    Down _ _) estado = -- tecla setinha pra cima
     let (x, _, n) = last estado
-        novaPosicao = (x, tamanhoGrade-1, n) -- > aplicar para todas as peças do tabuleiro
+        novaPosicao = (x, tamanhoGrade-1, n) -- > aplicar para todas as peças do tabuleiro !!! consertar função ta bugada !!!
         in tail estado ++ [novaPosicao, novaPeca]
 mover novaPeca (EventKey (SpecialKey KeyDown)  Down _ _) estado = -- tecla setinha pra baixo
     let (x, _, n) = last estado

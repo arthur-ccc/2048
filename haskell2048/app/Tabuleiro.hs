@@ -2,7 +2,7 @@ module Tabuleiro where
 
 import Graphics.Gloss
 
-tamanhoGrade :: Int -- a quantidade de células por linha obs: posteriormente deve ser replanejado para criar diferentes níveis de dificuldade
+tamanhoGrade :: Int -- a quantidade de células por linha !!!posteriormente deve ser replanejado para criar diferentes níveis de dificuldade!!!
 tamanhoGrade = 5
 
 largura, altura :: Float -- dimensões do desenhaTabuleiro
