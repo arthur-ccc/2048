@@ -19,7 +19,7 @@ Tente manter uma nomenclatura consistente para as branches. Siga o padrão para 
 
 Tipos comuns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;`feature`: para novas funcionalidades (Ex.: feature/HUB-inicial)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;`bugfix`: para correção de bugs (Ex.: bugfix/arthur/moverPeca-estranho)
+&nbsp;&nbsp;&nbsp;&nbsp;`bugfix`: para correção de bugs (Ex.: bugfix/arthur/moverPeca-estranho)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;`docs`: para documentação (Ex.: docs/Update-readme)
 
 Para a descrição, evite nomes genéricos, seja descritivo e consiso.
