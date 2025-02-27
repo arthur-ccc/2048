@@ -60,6 +60,20 @@ handleEventPeca (EventKey (SpecialKey KeyLeft)  Down _ _) eJogo = do -- tecla se
         return (novoEJogo ++ [novaPeca])
 handleEventPeca _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
 
+-- Função pra calcular a pontação(somando o valor das peças) do jogador
+
+calcularPontuacao :: EstadoJogo -> Int                    --(recebo a lista de peças)
+calcularPontuacao = sum . map (\(_, _, valor) -> valor)   --(transforma essa lista de peças em uma lista de números, q são os valores das peças e soma isso tudo)
+
+
+-- Função pra desenhar a pontuação na tecla
+desenharPontuacao :: EstadoJogo -> Picture
+desenharPontuacao estado =
+    translate (-larguraTab / 2 + 20) (alturaTab / 2 - 50) $         --lugar que o texto vai aparecer AQUI
+    scale 0.5 0.5 $                                                 --reduzir o tamanho do texto AQUI
+    color white $                                                   --cor do texto AQUI
+    text ("Score: " ++ show (calcularPontuacao estado))
+
 janela :: Display
 janela = InWindow "Tabuleiro" (truncate larguraTab, truncate alturaTab) (0, 0)
 
