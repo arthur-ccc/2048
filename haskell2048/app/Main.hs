@@ -23,7 +23,7 @@ desenharPecas estaPecas tamCel larg altu = pictures (map desenhaPeca pecas)
             posX = fromIntegral x * tamCel - larg / 2 + tamCel / 2
             posY = fromIntegral y * tamCel - altu / 2 + tamCel / 2
 
-desenharTabuleiro :: Picture -- retorna uma Picture quadriculada que representa o desenharTabuleiro
+desenharTabuleiro :: Picture -- retorna uma Picture quadriculada que representa o Tabuleiro
 desenharTabuleiro = pictures (map desenhaCelula celulas)
     where
     celulas = [(x, y) | x <- [0..tamanhoGrade-1], y <- [0..tamanhoGrade-1]]
@@ -37,12 +37,11 @@ desenharTabuleiro = pictures (map desenhaCelula celulas)
             posY = fromIntegral y * tamCelula - alturaTab / 2 + tamCelula / 2
             tamCelula = tamanhoCelula larguraTab tamanhoGrade
 
-
 desenharJogo :: EstadoJogo -> IO Picture -- retorna o estado atual do jogo
 desenharJogo estado = return (pictures [desenharTabuleiro, desenharPecas estado (tamanhoCelula larguraTab tamanhoGrade) larguraTab alturaTab])
 
 moverPeca :: Peca -> Int -> Int -> Peca
-moverPeca (x, y, n) alvoX alvoY = if alvoX == x -- movimento em Y
+moverPeca (x, y, n) alvoX alvoY = if alvoX == x        -- movimento em Y
                                     then (x, alvoY, n)
                                     else (alvoX, y, n) -- movimento em X
 
