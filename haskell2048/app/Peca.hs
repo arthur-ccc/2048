@@ -1,12 +1,11 @@
 module Peca where
+import System.Random (randomRIO)
 
-
-import System.Random (StdGen, Random(randomR))
 
 type Peca = (Int, Int, Int)
 
-geraPeca :: StdGen -> Int -> Int -> Peca -- função que gera as posições aleatórias, a peça sai com o valor default de 2
-geraPeca gen i f =
-    let (x, gen')  = randomR (i, f) gen
-        (y, gen'') = randomR (i, f) gen'
-        in (x, y, 2)
+geraPeca :: Int -> Int -> IO Peca
+geraPeca i f = do
+    x <- randomRIO (i, f)
+    y <- randomRIO (i, f)
+    return (x, y, 2)
