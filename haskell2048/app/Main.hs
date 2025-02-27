@@ -46,24 +46,24 @@ moverPeca (x, y, n) alvoX alvoY = if alvoX == x -- movimento em Y
                                     then (x, alvoY, n)
                                     else (alvoX, y, n) -- movimento em X
 
-mover :: Event -> EstadoJogo -> IO EstadoJogo
-mover (EventKey (SpecialKey KeyUp)    Down _ _) eJogo = do-- tecla setinha pra cima
+handleEventPeca :: Event -> EstadoJogo -> IO EstadoJogo
+handleEventPeca (EventKey (SpecialKey KeyUp)    Down _ _) eJogo = do-- tecla setinha pra cima
         let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) x (tamanhoGrade-1)) eJogo
         novaPeca <- geraPeca 0 (tamanhoGrade-1)
         return (novoEJogo ++ [novaPeca])
-mover (EventKey (SpecialKey KeyDown)  Down _ _) eJogo = do-- tecla setinha pra baixo
+handleEventPeca (EventKey (SpecialKey KeyDown)  Down _ _) eJogo = do-- tecla setinha pra baixo
         let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) x 0) eJogo
         novaPeca <- geraPeca 0 (tamanhoGrade-1)
         return (novoEJogo ++ [novaPeca])
-mover (EventKey (SpecialKey KeyRight) Down _ _) eJogo = do-- tecla setinha pra direita
+handleEventPeca (EventKey (SpecialKey KeyRight) Down _ _) eJogo = do-- tecla setinha pra direita
         let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) (tamanhoGrade-1) y) eJogo
         novaPeca <- geraPeca 0 (tamanhoGrade-1)
         return (novoEJogo ++ [novaPeca])
-mover (EventKey (SpecialKey KeyLeft)  Down _ _) eJogo = do-- tecla setinha pra esquerda
+handleEventPeca (EventKey (SpecialKey KeyLeft)  Down _ _) eJogo = do-- tecla setinha pra esquerda
         let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) 0  y) eJogo
         novaPeca <- geraPeca 0 (tamanhoGrade-1)
         return (novoEJogo ++ [novaPeca])
-mover _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
+handleEventPeca _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
 
 janela :: Display
 janela = InWindow "Tabuleiro" (truncate larguraTab, truncate alturaTab) (0, 0)
@@ -76,4 +76,4 @@ main = do
     let novaPeca = (x, y, 2)
     let estadoInicial = [novaPeca]
 
-    playIO janela white 60 estadoInicial desenharJogo mover (\_ estado -> return estado)
+    playIO janela white 60 estadoInicial desenharJogo handleEventPeca (\_ estado -> return estado)
