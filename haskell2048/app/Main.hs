@@ -77,12 +77,23 @@ moverCima = mesclarVertical
 moverBaixo :: EstadoJogo -> EstadoJogo
 moverBaixo tabuleiro = map reverse (transpor (mesclarHorizontal (transpor (map reverse tabuleiro))))
 
-
 handleEvent :: Event -> EstadoJogo -> IO EstadoJogo -- esperando moverPeca
-handleEvent (EventKey (SpecialKey KeyUp)     Down _ _) eJogo = return (moverCima eJogo) -- tecla setinha pra cima
-handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) eJogo = return (moverBaixo eJogo) -- tecla setinha pra cima
-handleEvent (EventKey (SpecialKey KeyRight)  Down _ _) eJogo = return (moverDireita eJogo) -- tecla setinha pra direita
-handleEvent (EventKey (SpecialKey KeyLeft)   Down _ _) eJogo = return (moverEsquerda eJogo) -- tecla setinha pra esquerda
+handleEvent (EventKey (SpecialKey KeyUp)     Down _ _) eJogo = do -- tecla setinha pra cima
+    (x, y) <- coordenadasAleatorias 0 (tamanhoGrade-1)
+    let novoEJogo = alterarElemTabuleiro (moverCima eJogo) x y 2
+    return novoEJogo
+handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) eJogo = do -- tecla setinha pra cima
+    (x, y) <- coordenadasAleatorias 0 (tamanhoGrade-1)
+    let novoEJogo = alterarElemTabuleiro (moverBaixo eJogo) x y 2
+    return novoEJogo
+handleEvent (EventKey (SpecialKey KeyRight)  Down _ _) eJogo = do -- tecla setinha pra direita
+    (x, y) <- coordenadasAleatorias 0 (tamanhoGrade-1)
+    let novoEJogo = alterarElemTabuleiro (moverBaixo eJogo) x y 2
+    return novoEJogo
+handleEvent (EventKey (SpecialKey KeyLeft)   Down _ _) eJogo = do -- tecla setinha pra esquerda
+    (x, y) <- coordenadasAleatorias 0 (tamanhoGrade-1)
+    let novoEJogo = alterarElemTabuleiro (moverBaixo eJogo) x y 2
+    return novoEJogo
 handleEvent _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
 
 janela :: Display
