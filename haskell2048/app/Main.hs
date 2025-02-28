@@ -3,7 +3,7 @@ module Main where
 import Graphics.Gloss.Interface.IO.Game (playIO)
 import Graphics.Gloss.Interface.Pure.Game
 import Tabuleiro
-import Peca
+-- import Peca
 import Util -- se acharem necessário criar funções que não são específicas pra algo, adicionem nesse módulo módulo
 
 
@@ -40,22 +40,49 @@ desenharTabuleiro = pictures (map desenhaCelula celulas)
 desenharJogo :: EstadoJogo -> IO Picture -- retorna o estado atual do jogo
 desenharJogo estado = return (pictures [desenharTabuleiro, desenharPecas estado (tamanhoCelula larguraTab tamanhoGrade) larguraTab alturaTab])
 
-moverPeca :: EstadoJogo -> EstadoJogo -- função em remodelamento
-moverPeca estado = undefined
-
--- Função auxiliar para mesclar elementos adjacentes iguais
-mescla :: [Int] -> [Int]
+mescla :: [Int] -> [Int] -- mescla elementos iguais
 mescla [] = []
 mescla [x] = [x]
 mescla (x:y:xs)
     | x == y = (x + y) : mescla xs
     | otherwise = x : mescla (y : xs)
 
+mesclarLinha :: [Int] -> [Int]
+mesclarLinha linha = mesclada ++ replicate (length linha - length mesclada) 0
+    where
+        filtrada = filter (/= 0) linha
+        mesclada = mescla filtrada
+
+mesclarHorizontal :: EstadoJogo -> EstadoJogo
+mesclarHorizontal = map mesclarLinha
+
+mesclarVertical :: EstadoJogo -> EstadoJogo
+mesclarVertical tabuleiro = transpor (mesclarHorizontal (transpor tabuleiro))
+
+completarComZeros :: EstadoJogo -> EstadoJogo -- preenche os espaços com zeros. também garante que o tamanho do tabuleiro se mantenha
+completarComZeros tabuleiro = map completarLinha tabuleiro
+    where
+        completarLinha linha = linha ++ replicate (tamanho - length linha) 0
+        tamanho = maximum (map length tabuleiro)
+
+moverEsquerda :: EstadoJogo -> EstadoJogo
+moverEsquerda = mesclarHorizontal
+
+moverDireita :: EstadoJogo -> EstadoJogo
+moverDireita tabuleiro = map reverse (mesclarHorizontal (map reverse tabuleiro))
+
+moverCima :: EstadoJogo -> EstadoJogo
+moverCima = mesclarVertical
+
+moverBaixo :: EstadoJogo -> EstadoJogo
+moverBaixo tabuleiro = map reverse (transpor (mesclarHorizontal (transpor (map reverse tabuleiro))))
+
+
 handleEvent :: Event -> EstadoJogo -> IO EstadoJogo -- esperando moverPeca
-handleEvent (EventKey (SpecialKey KeyUp)    Down _ _) eJogo = return undefined -- tecla setinha pra cima
-handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) eJogo = return undefined -- tecla setinha pra cima
-handleEvent (EventKey (SpecialKey KeyRight) Down _ _) eJogo = return undefined -- tecla setinha pra direita
-handleEvent (EventKey (SpecialKey KeyLeft)  Down _ _) eJogo = return undefined -- tecla setinha pra esquerda
+handleEvent (EventKey (SpecialKey KeyUp)     Down _ _) eJogo = return (moverCima eJogo) -- tecla setinha pra cima
+handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) eJogo = return (moverBaixo eJogo) -- tecla setinha pra cima
+handleEvent (EventKey (SpecialKey KeyRight)  Down _ _) eJogo = return (moverDireita eJogo) -- tecla setinha pra direita
+handleEvent (EventKey (SpecialKey KeyLeft)   Down _ _) eJogo = return (moverEsquerda eJogo) -- tecla setinha pra esquerda
 handleEvent _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
 
 janela :: Display
@@ -67,4 +94,4 @@ main = do
 
     let tabuleiroInicial = alterarElemTabuleiro (tabuleiroVazio tamanhoGrade) x y 2
     
-    playIO janela white 60 tabuleiroInicial desenharJogo (\_ b-> return b) (\_ estado -> return estado)
+    playIO janela white 60 tabuleiroInicial desenharJogo handleEvent (\_ estado -> return estado)
