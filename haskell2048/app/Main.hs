@@ -43,7 +43,13 @@ desenharJogo estado = return (pictures [desenharTabuleiro, desenharPecas estado 
 moverPeca :: EstadoJogo -> EstadoJogo -- função em remodelamento
 moverPeca estado = undefined
 
-mescla = undefined -- função pra mesclar peças
+-- Função auxiliar para mesclar elementos adjacentes iguais
+mescla :: [Int] -> [Int]
+mescla [] = []
+mescla [x] = [x]
+mescla (x:y:xs)
+    | x == y = (x + y) : mescla xs
+    | otherwise = x : mescla (y : xs)
 
 handleEvent :: Event -> EstadoJogo -> IO EstadoJogo -- esperando moverPeca
 handleEvent (EventKey (SpecialKey KeyUp)    Down _ _) eJogo = return undefined -- tecla setinha pra cima
