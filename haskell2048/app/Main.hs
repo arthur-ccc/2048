@@ -4,7 +4,8 @@ import Graphics.Gloss.Interface.IO.Game (playIO)
 import Graphics.Gloss.Interface.Pure.Game
 import Tabuleiro
 import Peca
-import Util -- se acharem necessário criar funções que não são específicas pra algo pode criar no módulo
+import Util -- se acharem necessário criar funções que não são específicas pra algo, adicionem nesse módulo módulo
+
 
 type Peca = Int
 type EstadoJogo = [[Peca]]
@@ -12,7 +13,7 @@ type EstadoJogo = [[Peca]]
 desenharPecas :: EstadoJogo -> Float -> Float -> Float -> Picture
 desenharPecas estaPecas tamCel larg altu = pictures (map desenhaPeca pecas)
     where
-        pecas = matrizTLista estaPecas
+        pecas = filter (\(_, _, n) -> n>=2) (matrizTLista estaPecas)
 
         desenhaPeca (x, y, n) = pictures [pecaQuadrada, valor] -- funcao local, nao presica cabecalho por conta da inferencia de tipos
             where
@@ -39,26 +40,17 @@ desenharTabuleiro = pictures (map desenhaCelula celulas)
 desenharJogo :: EstadoJogo -> IO Picture -- retorna o estado atual do jogo
 desenharJogo estado = return (pictures [desenharTabuleiro, desenharPecas estado (tamanhoCelula larguraTab tamanhoGrade) larguraTab alturaTab])
 
-moverPeca :: EstadoJogo -> Int -> Int -> EstadoJogo
-moverPeca estado x y alvoX alvoY = do
-                let peca = estado !! y !! x
+moverPeca :: EstadoJogo -> EstadoJogo -- função em remodelamento
+moverPeca estado = undefined
 
 mescla = undefined -- função pra mesclar peças
 
-handleEventPeca :: Event -> EstadoJogo -> IO EstadoJogo
-handleEventPeca (EventKey (SpecialKey KeyUp)    Down _ _) eJogo = do -- tecla setinha pra cima
-        let novoEJogo =  -- fazer as peças se moverem
-        novaPeca <- coordenadasAleatorias 0 (tamanhoGrade-1)
-        return (undefined)
-handleEventPeca (EventKey (SpecialKey KeyRight) Down _ _) eJogo = do -- tecla setinha pra direita
-        let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) (tamanhoGrade-1) y) eJogo
-        novaPeca <- geraPeca 0 (tamanhoGrade-1)
-        return (novoEJogo ++ [novaPeca])
-handleEventPeca (EventKey (SpecialKey KeyLeft)  Down _ _) eJogo = do -- tecla setinha pra esquerda
-        let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) 0  y) eJogo
-        novaPeca <- geraPeca 0 (tamanhoGrade-1)
-        return (novoEJogo ++ [novaPeca])
-handleEventPeca _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
+handleEvent :: Event -> EstadoJogo -> IO EstadoJogo -- esperando moverPeca
+handleEvent (EventKey (SpecialKey KeyUp)    Down _ _) eJogo = return undefined -- tecla setinha pra cima
+handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) eJogo = return undefined -- tecla setinha pra cima
+handleEvent (EventKey (SpecialKey KeyRight) Down _ _) eJogo = return undefined -- tecla setinha pra direita
+handleEvent (EventKey (SpecialKey KeyLeft)  Down _ _) eJogo = return undefined -- tecla setinha pra esquerda
+handleEvent _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
 
 janela :: Display
 janela = InWindow "Tabuleiro" (truncate larguraTab, truncate alturaTab) (0, 0)
@@ -67,7 +59,6 @@ main :: IO ()
 main = do
     (x, y) <- coordenadasAleatorias 0 (tamanhoGrade-1)
 
-    let novaPeca = (x, y, 2)
-    let estadoInicial = [novaPeca]
-
-    playIO janela white 60 estadoInicial desenharJogo handleEventPeca (\_ estado -> return estado)
+    let tabuleiroInicial = alterarElemTabuleiro (tabuleiroVazio tamanhoGrade) x y 2
+    
+    playIO janela white 60 tabuleiroInicial desenharJogo (\_ b-> return b) (\_ estado -> return estado)
