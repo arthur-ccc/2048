@@ -1,7 +1,7 @@
 module Peca where
 
 import System.Random (randomRIO)
-import Tabuleiro (Tabuleiro, tamanhoTabuleiro, alterarElemTabuleiro)
+import Tabuleiro (Tabuleiro, tamanhoTabuleiro)
 import Util (transpor)
 
 type Peca = Int
@@ -14,11 +14,6 @@ escolherPosicaoAleatoria :: [(Int, Int)] -> IO (Int, Int)
 escolherPosicaoAleatoria vazias = do
     indice <- randomRIO (0, length vazias - 1)
     return (vazias !! indice)
-
-gerarPecaTabuleiro :: Tabuleiro -> Tabuleiro
-gerarPecaTabuleiro tabuleiro = do
-    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
-    alterarElemTabuleiro tabuleiro x y 2
 
 mesclar :: [Int] -> [Int] -- mescla elementos iguais
 mesclar [] = []
