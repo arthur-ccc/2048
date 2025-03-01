@@ -1,12 +1,13 @@
 module Tabuleiro where
 
+import System.Random (randomRIO)
 import Util
 
 
 type Tabuleiro = [[Int]]
 
 tamanhoTabuleiro :: Int -- a quantidade de células por linha !!!posteriormente deve ser replanejado para criar diferentes níveis de dificuldade!!!
-tamanhoTabuleiro = 5
+tamanhoTabuleiro = 4
 
 tamanhoCelula :: Float
 tamanhoCelula = 200
@@ -47,3 +48,15 @@ moverCima tabuleiro = transpor $ moverEsquerda $ transpor tabuleiro
 
 moverBaixo :: Tabuleiro -> Tabuleiro
 moverBaixo tabuleiro = transpor $ moverDireita $ transpor tabuleiro
+
+-- Retorna uma lista de coordenadas (x, y) das células vazias
+coordenadasVazias :: Tabuleiro -> [(Int, Int)]
+coordenadasVazias tabuleiro =
+    [(x, y) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1], tabuleiro !! y !! x == 0]
+
+
+-- Escolhe uma posição aleatória da lista de coordenadas vazias
+escolherPosicaoAleatoria :: [(Int, Int)] -> IO (Int, Int)
+escolherPosicaoAleatoria vazias = do
+    indice <- randomRIO (0, length vazias - 1)
+    return (vazias !! indice)

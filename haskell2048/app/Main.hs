@@ -31,24 +31,29 @@ desenharTabuleiro tabuleiro = return $ pictures [desenharCelula x y (tabuleiro !
 
 handleEvent :: Event -> Tabuleiro -> IO Tabuleiro -- esperando moverPeca
 handleEvent (EventKey (SpecialKey KeyUp)     Down _ _) tabuleiro = do -- tecla setinha pra cima
-    (x, y) <- coordenadasAleatorias 0 (tamanhoTabuleiro-1)
-    let novoTabuleiro = alterarElemTabuleiro (moverCima tabuleiro) x y 2
+    let movido = moverCima tabuleiro
+    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
+
+    let novoTabuleiro = alterarElemTabuleiro movido x y 2
     
     return novoTabuleiro
 handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) tabuleiro = do -- tecla setinha pra cima
-    (x, y) <- coordenadasAleatorias 0 (tamanhoTabuleiro-1)
-    let novoTabuleiro = alterarElemTabuleiro (moverBaixo tabuleiro) x y 2
-    
+    let movido = moverBaixo tabuleiro
+    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
+
+    let novoTabuleiro = alterarElemTabuleiro movido x y 2
     return novoTabuleiro
 handleEvent (EventKey (SpecialKey KeyRight)  Down _ _) tabuleiro = do -- tecla setinha pra direita
-    (x, y) <- coordenadasAleatorias 0 (tamanhoTabuleiro-1)
-    let novoTabuleiro = alterarElemTabuleiro (moverDireita tabuleiro) x y 2
+    let movido = moverDireita tabuleiro
+    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
     
+    let novoTabuleiro = alterarElemTabuleiro movido x y 2
     return novoTabuleiro
 handleEvent (EventKey (SpecialKey KeyLeft)   Down _ _) tabuleiro = do -- tecla setinha pra esquerda
-    (x, y) <- coordenadasAleatorias 0 (tamanhoTabuleiro-1)
-    let novoTabuleiro = alterarElemTabuleiro (moverEsquerda tabuleiro) x y 2
+    let movido = moverEsquerda tabuleiro
+    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
     
+    let novoTabuleiro = alterarElemTabuleiro movido x y 2
     return novoTabuleiro
 handleEvent _ tabuleiro = return tabuleiro -- ignora resto do teclado e não faz nada
 
