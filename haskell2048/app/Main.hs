@@ -51,24 +51,6 @@ handleEvent (EventKey (SpecialKey KeyLeft)   Down _ _) tabuleiro = do -- tecla s
     return novoTabuleiro
 handleEvent _ tabuleiro = return tabuleiro -- ignora resto do teclado e não faz nada
 
-<<<<<<< HEAD
-
--- Função pra calcular a pontação(somando o valor das peças) do jogador
-
-calcularPontuacao :: EstadoJogo -> Int                    --(recebo a lista de peças)
-calcularPontuacao = sum . map (\(_, _, valor) -> valor)   --(transforma essa lista de peças em uma lista de números, q são os valores das peças e soma isso tudo)
-
-
--- Função pra desenhar a pontuação na tecla
-desenharPontuacao :: EstadoJogo -> Picture
-desenharPontuacao estado =
-    translate (-larguraTab / 2 + 20) (alturaTab / 2 - 50) $         --lugar que o texto vai aparecer AQUI
-    scale 0.5 0.5 $                                                 --reduzir o tamanho do texto AQUI
-    color white $                                                   --cor do texto AQUI
-    text ("Score: " ++ show (calcularPontuacao estado))
-
-=======
->>>>>>> main
 janela :: Display
 janela = InWindow "Tabuleiro" (truncate tamanhoJanela, truncate tamanhoJanela) (0, 0)
 
