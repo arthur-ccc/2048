@@ -3,10 +3,8 @@ module Main where
 import Graphics.Gloss.Interface.IO.Game (playIO)
 import Graphics.Gloss.Interface.Pure.Game
 import Tabuleiro
-import Util
+import Peca
 
-
-type Peca = Int
 
 corPeca :: Color
 corPeca = makeColor 0.721568627 0.007843137 0.007843137 1
@@ -32,37 +30,24 @@ desenharTabuleiro tabuleiro = return $ pictures [desenharCelula x y (tabuleiro !
 handleEvent :: Event -> Tabuleiro -> IO Tabuleiro -- esperando moverPeca
 handleEvent (EventKey (SpecialKey KeyUp)     Down _ _) tabuleiro = do -- tecla setinha pra cima
     let movido = moverCima tabuleiro
-    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
-
-    let novoTabuleiro = alterarElemTabuleiro movido x y 2
-    
-    return novoTabuleiro
+    return $ gerarPecaTabuleiro movido
 handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) tabuleiro = do -- tecla setinha pra cima
     let movido = moverBaixo tabuleiro
-    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
-
-    let novoTabuleiro = alterarElemTabuleiro movido x y 2
-    return novoTabuleiro
+    return $ gerarPecaTabuleiro movido
 handleEvent (EventKey (SpecialKey KeyRight)  Down _ _) tabuleiro = do -- tecla setinha pra direita
     let movido = moverDireita tabuleiro
-    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
-    
-    let novoTabuleiro = alterarElemTabuleiro movido x y 2
-    return novoTabuleiro
+    return $ gerarPecaTabuleiro movido
 handleEvent (EventKey (SpecialKey KeyLeft)   Down _ _) tabuleiro = do -- tecla setinha pra esquerda
     let movido = moverEsquerda tabuleiro
-    (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias tabuleiro
-    
-    let novoTabuleiro = alterarElemTabuleiro movido x y 2
-    return novoTabuleiro
+    return $ gerarPecaTabuleiro movido
 handleEvent _ tabuleiro = return tabuleiro -- ignora resto do teclado e não faz nada
+
 
 janela :: Display
 janela = InWindow "Tabuleiro" (truncate tamanhoJanela, truncate tamanhoJanela) (0, 0)
 
 main :: IO ()
 main = do
-    (x, y) <- coordenadasAleatorias 0 (tamanhoTabuleiro-1)
 
     let tabuleiroInicial = alterarElemTabuleiro (tabuleiroVazio tamanhoTabuleiro) x y 2
     
