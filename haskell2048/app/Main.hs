@@ -4,61 +4,44 @@ import Graphics.Gloss.Interface.IO.Game (playIO)
 import Graphics.Gloss.Interface.Pure.Game
 import Tabuleiro
 import Peca
-import Util -- se acharem necessário criar funções que não são específicas pra algo pode criar no módulo
 
-type Peca = Int
-type EstadoJogo = [[Peca]]
 
-desenharPecas :: EstadoJogo -> Float -> Float -> Float -> Picture
-desenharPecas estaPecas tamCel larg altu = pictures (map desenhaPeca pecas)
-    where
-        pecas = matrizTLista estaPecas
+corPeca :: Color
+corPeca = makeColor 0.721568627 0.007843137 0.007843137 1
 
-        desenhaPeca (x, y, n) = pictures [pecaQuadrada, valor] -- funcao local, nao presica cabecalho por conta da inferencia de tipos
-            where
-            pecaQuadrada = translate posX posY (color red (rectangleSolid (tamCel * 0.8) (tamCel * 0.8)))
-            valor = translate (posX-10) (posY-15) (color white (scale 0.3 0.3 (text (show n))))
+desenharPeca :: Float -> Float -> Int -> Picture
+desenharPeca posX posY valor = 
+    let tamanho = tamanhoCelula * 0.8
+        in pictures [translate posX posY (color corPeca $ rectangleSolid tamanho tamanho),
+                     translate (posX-15) (posY-20) (color white $ scale 0.4 0.4 $ text $ show valor)]
 
-            posX = fromIntegral x * tamCel - larg / 2 + tamCel / 2
-            posY = fromIntegral y * tamCel - altu / 2 + tamCel / 2
+desenharCelula :: Int -> Int -> Int -> Picture
+desenharCelula x y valor = 
+    let posX = fromIntegral x * tamanhoCelula - tamanhoJanela / 2 + tamanhoCelula / 2
+        posY = fromIntegral (tamanhoTabuleiro - 1 - y) * tamanhoCelula - tamanhoJanela / 2 +  tamanhoCelula / 2
+        celula = translate posX posY $ color (greyN 0.5) $ rectangleSolid tamanhoCelula tamanhoCelula
+        bordaCelula = translate posX posY $ color white $ rectangleWire tamanhoCelula tamanhoCelula
+        peca = if valor >= 2 then desenharPeca posX posY valor else blank
+    in pictures [celula, bordaCelula, peca]
 
-desenharTabuleiro :: Picture -- retorna uma Picture quadriculada que representa o Tabuleiro
-desenharTabuleiro = pictures (map desenhaCelula celulas)
-    where
-    celulas = [(x, y) | x <- [0..tamanhoGrade-1], y <- [0..tamanhoGrade-1]]
+desenharTabuleiro :: Tabuleiro -> IO Picture
+desenharTabuleiro tabuleiro = return $ pictures [desenharCelula x y (tabuleiro !! y !! x) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1]]
 
-    desenhaCelula (x, y) = pictures [celula, borda]
-            where
-            celula = translate posX posY (color (greyN 0.5) (rectangleSolid tamCelula tamCelula))
-            borda  = translate posX posY (color (greyN 0.8) (rectangleWire tamCelula tamCelula))
+handleEvent :: Event -> Tabuleiro -> IO Tabuleiro -- esperando moverPeca
+handleEvent (EventKey (SpecialKey KeyUp)     Down _ _) tabuleiro = do -- tecla setinha pra cima
+    let movido = moverCima tabuleiro
+    return $ gerarPecaTabuleiro movido
+handleEvent (EventKey (SpecialKey KeyDown)   Down _ _) tabuleiro = do -- tecla setinha pra cima
+    let movido = moverBaixo tabuleiro
+    return $ gerarPecaTabuleiro movido
+handleEvent (EventKey (SpecialKey KeyRight)  Down _ _) tabuleiro = do -- tecla setinha pra direita
+    let movido = moverDireita tabuleiro
+    return $ gerarPecaTabuleiro movido
+handleEvent (EventKey (SpecialKey KeyLeft)   Down _ _) tabuleiro = do -- tecla setinha pra esquerda
+    let movido = moverEsquerda tabuleiro
+    return $ gerarPecaTabuleiro movido
+handleEvent _ tabuleiro = return tabuleiro -- ignora resto do teclado e não faz nada
 
-            posX = fromIntegral x * tamCelula - larguraTab / 2 + tamCelula / 2
-            posY = fromIntegral y * tamCelula - alturaTab / 2 + tamCelula / 2
-            tamCelula = tamanhoCelula larguraTab tamanhoGrade
-
-desenharJogo :: EstadoJogo -> IO Picture -- retorna o estado atual do jogo
-desenharJogo estado = return (pictures [desenharTabuleiro, desenharPecas estado (tamanhoCelula larguraTab tamanhoGrade) larguraTab alturaTab])
-
-moverPeca :: EstadoJogo -> Int -> Int -> EstadoJogo
-moverPeca estado x y alvoX alvoY = do
-                let peca = estado !! y !! x
-
-mescla = undefined -- função pra mesclar peças
-
-handleEventPeca :: Event -> EstadoJogo -> IO EstadoJogo
-handleEventPeca (EventKey (SpecialKey KeyUp)    Down _ _) eJogo = do -- tecla setinha pra cima
-        let novoEJogo =  -- fazer as peças se moverem
-        novaPeca <- coordenadasAleatorias 0 (tamanhoGrade-1)
-        return (undefined)
-handleEventPeca (EventKey (SpecialKey KeyRight) Down _ _) eJogo = do -- tecla setinha pra direita
-        let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) (tamanhoGrade-1) y) eJogo
-        novaPeca <- geraPeca 0 (tamanhoGrade-1)
-        return (novoEJogo ++ [novaPeca])
-handleEventPeca (EventKey (SpecialKey KeyLeft)  Down _ _) eJogo = do -- tecla setinha pra esquerda
-        let novoEJogo = map (\(x, y, n) -> moverPeca (x, y, n) 0  y) eJogo
-        novaPeca <- geraPeca 0 (tamanhoGrade-1)
-        return (novoEJogo ++ [novaPeca])
-handleEventPeca _ eJogo = return eJogo -- ignora resto do teclado e não faz nada
 
 -- Função pra calcular a pontação(somando o valor das peças) do jogador
 
@@ -75,13 +58,11 @@ desenharPontuacao estado =
     text ("Score: " ++ show (calcularPontuacao estado))
 
 janela :: Display
-janela = InWindow "Tabuleiro" (truncate larguraTab, truncate alturaTab) (0, 0)
+janela = InWindow "Tabuleiro" (truncate tamanhoJanela, truncate tamanhoJanela) (0, 0)
 
 main :: IO ()
 main = do
-    (x, y) <- coordenadasAleatorias 0 (tamanhoGrade-1)
 
-    let novaPeca = (x, y, 2)
-    let estadoInicial = [novaPeca]
-
-    playIO janela white 60 estadoInicial desenharJogo handleEventPeca (\_ estado -> return estado)
+    let tabuleiroInicial = alterarElemTabuleiro (tabuleiroVazio tamanhoTabuleiro) x y 2
+    
+    playIO janela white 60 tabuleiroInicial desenharTabuleiro handleEvent (\_ tabuleiro -> return tabuleiro)
