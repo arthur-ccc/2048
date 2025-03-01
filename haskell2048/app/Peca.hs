@@ -15,30 +15,38 @@ escolherPosicaoAleatoria vazias = do
     indice <- randomRIO (0, length vazias - 1)
     return (vazias !! indice)
 
-mesclar :: [Int] -> [Int] -- mescla elementos iguais
-mesclar [] = []
-mesclar [x] = [x]
+mesclar :: [Int] -> ([Int], Int) -- mescla elementos iguais e calcula a pontuação
+mesclar [] = ([], 0)
+mesclar [x] = ([x], 0)
 mesclar (x:y:xs)
-    | x == y = (x + y) : mesclar xs
-    | otherwise = x : mesclar (y : xs)
+    | x == y    = let (resto, pontuacaoRestante) = mesclar xs
+                  in (x + y : resto, x + y)
+    | otherwise = let (resto, pontuacaoRestante) = mesclar (y:xs)
+                  in (x : resto, pontuacaoRestante)
 
-mesclarLinha :: [Int] -> [Int]
-mesclarLinha linha = mesclada ++ replicate (length linha - length mesclada) 0
-    where
-        filtrada = filter (/= 0) linha
-        mesclada = mesclar filtrada
+mesclarLinha :: [Int] -> ([Int], Int)
+mesclarLinha linha = 
+    let (mesclada, pontuacao) = mesclar (filter (/= 0) linha)
+    in (mesclada ++ replicate (length linha - length mesclada) 0, pontuacao)
 
-mesclarHorizontal :: Tabuleiro -> Tabuleiro
-mesclarHorizontal = map mesclarLinha
+mesclarHorizontal :: Tabuleiro -> (Tabuleiro, Int)
+mesclarHorizontal = foldl (\(accTab, accPontuacao) linha -> 
+                              let (novaLinha, linhaPontuacao) = mesclarLinha linha
+                              in (accTab ++ [novaLinha], accPontuacao + linhaPontuacao)
+                           ) ([], 0)
 
-moverEsquerda :: Tabuleiro -> Tabuleiro
-moverEsquerda = mesclarHorizontal
+moverEsquerda :: Tabuleiro -> (Tabuleiro, Int)
+moverEsquerda tabuleiro = mesclarHorizontal tabuleiro
 
-moverDireita :: Tabuleiro -> Tabuleiro
-moverDireita tabuleiro = map reverse (mesclarHorizontal (map reverse tabuleiro))
+moverDireita :: Tabuleiro -> (Tabuleiro, Int)
+moverDireita tabuleiro = mesclarHorizontal (map reverse tabuleiro)
 
-moverCima :: Tabuleiro -> Tabuleiro
-moverCima tabuleiro = transpor $ moverEsquerda $ transpor tabuleiro
+moverCima :: Tabuleiro -> (Tabuleiro, Int)
+moverCima tabuleiro = 
+    let (tab, pontuacao) = mesclarHorizontal (transpor tabuleiro)
+    in (transpor tab, pontuacao)
 
-moverBaixo :: Tabuleiro -> Tabuleiro
-moverBaixo tabuleiro = transpor $ moverDireita $ transpor tabuleiro
+moverBaixo :: Tabuleiro -> (Tabuleiro, Int)
+moverBaixo tabuleiro = 
+    let (tab, pontuacao) = mesclarHorizontal (map reverse (transpor tabuleiro))
+    in (transpor tab, pontuacao)
