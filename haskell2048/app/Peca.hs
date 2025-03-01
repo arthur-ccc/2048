@@ -8,8 +8,8 @@ type Peca = Int
 
 coordenadasVazias :: Tabuleiro -> [(Int, Int)]
 coordenadasVazias tabuleiro =
-    [(x, y) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1], tabuleiro !! y !! x == 0]
-
+    [(y, x) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1], tabuleiro !! y !! x == 0]
+    
 escolherPosicaoAleatoria :: [(Int, Int)] -> IO (Int, Int)
 escolherPosicaoAleatoria vazias = do
     indice <- randomRIO (0, length vazias - 1)
