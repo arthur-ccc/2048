@@ -7,14 +7,11 @@ import Peca
 -- import Util
 
 
-corPeca :: Color
-corPeca = makeColor 0.721568627 0.007843137 0.007843137 1
-
 desenharPeca :: Float -> Float -> Int -> Picture
 desenharPeca posX posY valor = 
     let tamanho = tamanhoCelula * 0.8
-        in pictures [translate posX posY (color corPeca $ rectangleSolid tamanho tamanho),
-                     translate (posX-15) (posY-20) (color white $ scale 0.4 0.4 $ text $ show valor)]
+        in pictures [translate posX posY (color (corPeca valor) $ rectangleSolid tamanho tamanho),
+                     translate (posX-15) (posY-20) (color black $ scale 0.4 0.4 $ text $ show valor)]
 
 desenharCelula :: Int -> Int -> Int -> Picture
 desenharCelula x y valor = 
@@ -60,6 +57,6 @@ main = do
 
     (x, y) <- escolherPosicaoAleatoria $ coordenadasVazias novo 
 
-    let tabuleiroInicial = alterarElemTabuleiro novo x y 2
+    let tabuleiroInicial = alterarElemTabuleiro novo x y 1024
     
     playIO janela white 60 tabuleiroInicial desenharTabuleiro handleEvent (\_ tabuleiro -> return tabuleiro)

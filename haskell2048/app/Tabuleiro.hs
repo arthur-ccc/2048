@@ -6,7 +6,7 @@ import Util (alterarElemLista)
 type Tabuleiro = [[Int]]
 
 tamanhoTabuleiro :: Int -- a quantidade de células por linha
-tamanhoTabuleiro = 4
+tamanhoTabuleiro = 5
 
 tamanhoCelula :: Float
 tamanhoCelula = 200
