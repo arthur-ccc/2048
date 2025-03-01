@@ -26,7 +26,10 @@ desenharCelula x y valor =
     in pictures [celula, bordaCelula, peca]
 
 desenharTabuleiro :: Tabuleiro -> IO Picture
-desenharTabuleiro tabuleiro = return $ pictures [desenharCelula x y (tabuleiro !! y !! x) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1]]
+desenharTabuleiro tabuleiro = do
+    let tabuleiroDesenhado = pictures [desenharCelula x y (tabuleiro !! y !! x) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1]]
+    let pontuacaoDesenhada = desenharPontuacao tabuleiro
+    return $ pictures [tabuleiroDesenhado, pontuacaoDesenhada]
 
 handleEvent :: Event -> Tabuleiro -> IO Tabuleiro -- esperando moverPeca
 handleEvent (EventKey (SpecialKey KeyUp)     Down _ _) tabuleiro = do -- tecla setinha pra cima
@@ -53,6 +56,22 @@ handleEvent _ tabuleiro = return tabuleiro -- ignora resto do teclado e não faz
 
 janela :: Display
 janela = InWindow "Tabuleiro" (truncate tamanhoJanela, truncate tamanhoJanela) (0, 0)
+
+
+--Função que calcula a pontuação
+calcularPontuacao :: Tabuleiro -> Int
+calcularPontuacao tabuleiro = sum [valor | linha <- tabuleiro, valor <- linha, valor /= 0] 
+        --percorre o tabuleiro, verifica se o valor da célula é diferente de zero (ou seja, q tem uma peça lá) e soma os valores.
+
+--Função para desenhar a pontuação
+desenharPontuacao :: Tabuleiro -> Picture
+desenharPontuacao tabuleiro = 
+    translate (-tamanhoJanela / 2 + 20) (tamanhoJanela / 2 - 50) $      --lugar que o texto vai aparecer AQUI
+        scale 0.5 0.5 $                                                 --reduzir o tamanho do texto AQUI
+        color white $                                                   --cor do texto AQUI
+        text ("Score: " ++ show (calcularPontuacao tabuleiro))          --texto da pontuação
+
+
 
 main :: IO ()
 main = do
