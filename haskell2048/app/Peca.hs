@@ -1,15 +1,18 @@
 module Peca where
 
 import System.Random (randomRIO)
-import Tabuleiro (Tabuleiro, tamanhoTabuleiro)
+import Tabuleiro (Tabuleiro)
 import Util (transpor)
 
 type Peca = Int
 
-coordenadasVazias :: Tabuleiro -> [(Int, Int)]
-coordenadasVazias tabuleiro =
-    [(y, x) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1], tabuleiro !! y !! x == 0]
+coordenadasVazias :: Int -> Tabuleiro -> [(Int, Int)]
+coordenadasVazias tamanho tabuleiro =
+    [(y, x) | y <- [0..tamanho-1], x <- [0..tamanho-1], tabuleiro !! y !! x == 0]
     
+tabuleiroCheio :: Tabuleiro -> Bool
+tabuleiroCheio tabuleiro = null (coordenadasVazias (length tabuleiro) tabuleiro)
+
 escolherPosicaoAleatoria :: [(Int, Int)] -> IO (Int, Int)
 escolherPosicaoAleatoria vazias = do
     indice <- randomRIO (0, length vazias - 1)
