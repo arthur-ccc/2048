@@ -15,19 +15,19 @@ escolherPosicaoAleatoria vazias = do
     indice <- randomRIO (0, length vazias - 1)
     return (vazias !! indice)
 
-mesclar :: [Int] -> ([Int], Int) -- mescla elementos iguais e calcula a pontuação
+mesclar :: [Peca] -> ([Peca], Int) -- mescla elementos iguais e calcula a pontuação
 mesclar [] = ([], 0)
 mesclar [x] = ([x], 0)
 mesclar (x:y:xs)
-    | x == y    = let (resto, pontuacaoRestante) = mesclar xs
-                  in (x + y : resto, x + y)
+    | x == y    = let (resto, _) = mesclar xs 
+                  in (x + y : resto, x + y) -- mescla a linha, porém consome os zeros e faz ela fica menor
     | otherwise = let (resto, pontuacaoRestante) = mesclar (y:xs)
                   in (x : resto, pontuacaoRestante)
 
-mesclarLinha :: [Int] -> ([Int], Int)
+mesclarLinha :: [Peca] -> ([Peca], Int)
 mesclarLinha linha = 
     let (mesclada, pontuacao) = mesclar (filter (/= 0) linha)
-    in (mesclada ++ replicate (length linha - length mesclada) 0, pontuacao)
+    in (mesclada ++ replicate (length linha - length mesclada) 0, pontuacao) -- recebe a linha, mescla e preenche com os zeros
 
 mesclarHorizontal :: Tabuleiro -> (Tabuleiro, Int)
 mesclarHorizontal = foldl (\(accTab, accPontuacao) linha -> 
@@ -36,7 +36,7 @@ mesclarHorizontal = foldl (\(accTab, accPontuacao) linha ->
                            ) ([], 0)
 
 moverEsquerda :: Tabuleiro -> (Tabuleiro, Int)
-moverEsquerda tabuleiro = mesclarHorizontal tabuleiro
+moverEsquerda = mesclarHorizontal 
 
 moverDireita :: Tabuleiro -> (Tabuleiro, Int)
 moverDireita tabuleiro = mesclarHorizontal (map reverse tabuleiro)

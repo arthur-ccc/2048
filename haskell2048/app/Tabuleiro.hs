@@ -9,7 +9,7 @@ tamanhoTabuleiro :: Int -- a quantidade de células por linha
 tamanhoTabuleiro = 4
 
 tamanhoCelula :: Float
-tamanhoCelula = 200
+tamanhoCelula = 200 -- tamanho em pixels
 
 tamanhoJanela :: Float
 tamanhoJanela = tamanhoCelula * fromIntegral tamanhoTabuleiro
