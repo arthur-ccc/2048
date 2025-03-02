@@ -1,20 +1,11 @@
 module Peca where
 
-import System.Random (randomRIO)
-import Tabuleiro (Tabuleiro, tamanhoTabuleiro)
+import Tabuleiro (Tabuleiro)
 import Util (transpor)
 import Graphics.Gloss (Color, makeColor, blue, greyN)
 
-type Peca = Int
 
-coordenadasVazias :: Tabuleiro -> [(Int, Int)]
-coordenadasVazias tabuleiro =
-    [(y, x) | y <- [0..tamanhoTabuleiro-1], x <- [0..tamanhoTabuleiro-1], tabuleiro !! y !! x == 0]
-    
-escolherPosicaoAleatoria :: [(Int, Int)] -> IO (Int, Int)
-escolherPosicaoAleatoria vazias = do
-    indice <- randomRIO (0, length vazias - 1)
-    return (vazias !! indice)
+type Peca = Int
 
 mesclar :: [Int] -> [Int] -- mescla elementos iguais
 mesclar [] = []
