@@ -1,5 +1,5 @@
 module Main where
-
+import qualified Data.Map as Map  -- (importei p usar na pontuação)
 import Graphics.Gloss.Interface.IO.Game (playIO)
 import Graphics.Gloss.Interface.Pure.Game
 import Tabuleiro
@@ -96,47 +96,80 @@ handleEvent (EventKey (Char dificuldade) Down _ _) (Dificuldade _) = do
             let vazio = tabuleiroVazio tamanho
             (x, y) <- escolherPosicaoAleatoria vazio
             let tabuleiroInicial = inserirPecaNova vazio x y
-            return $ Partida tabuleiroInicial tamanho (-1)
+            return $ Partida tabuleiroInicial tamanho 0 --pontuacao comça com 0
 
         Nothing -> return (Dificuldade 0)      -- se mantém na tela de escolha de Dificuldade
 
-handleEvent (EventKey (SpecialKey KeyUp) Down _ _) (Partida tabuleiro tamanho _) = do
-    let movido = moverCima tabuleiro
+handleEvent (EventKey (SpecialKey KeyUp) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
+    let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverCima 
     if movido == tabuleiro                     -- movimento não afeta as peças
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro tamanho pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (-1) -- !!! consertar pontuação !!!
+            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement) -- !!! consertar pontuação !!!
 
-handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro tamanho _) = do
-    let movido = moverBaixo tabuleiro
+handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
+    let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverBaixo 
     if movido == tabuleiro
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro tamanho pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (-1)         -- !!! consertar pontuação !!!
+            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)         -- !!! consertar pontuação !!!
 
-handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro tamanho _) = do
-    let movido = moverDireita tabuleiro
+handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
+    let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverDireita 
     if movido == tabuleiro
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro tamanho pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (-1)  -- !!! consertar pontuação !!!
+            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)  -- !!! consertar pontuação !!!
 
-handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro tamanho _) = do
-    let movido = moverEsquerda tabuleiro
+handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
+    let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverEsquerda 
     if movido == tabuleiro
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro tamanho pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (-1)         -- !!! consertar pontuação !!!
+            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)         -- !!! consertar pontuação !!!
 
 handleEvent _ jogo = return jogo -- Ignora o restante do teclado e não faz nada
+-------------------------------------------------------------------------------------------------------------------
+calculaScore :: Tabuleiro -> Tabuleiro -> Int
+calculaScore antes depois =
+  let
+    -- Constrói um mapa (dicionário) que conta as ocorrências de cada peça (exceto 0)
+    buildMap :: Tabuleiro -> Map.Map Int Int
+    buildMap tab = foldl (\acc linha -> 
+                          foldl (\acc' x -> if x == 0 
+                                            then acc' 
+                                            else Map.insertWith (+) x 1 acc' 
+                                 ) acc linha
+                         ) Map.empty tab
+
+    mapaAntes  = buildMap antes
+    mapaDepois = buildMap depois
+    
+    -- Para cada valor presente no mapaDepois, calcula a diferença na contagem
+    score = Map.foldrWithKey (\valor cnt acc -> 
+              let cntAntes = Map.findWithDefault 0 valor mapaAntes
+                  diff = cnt - cntAntes
+              in if diff > 0 then acc + diff * valor else acc
+            ) 0 mapaDepois
+  in score
+
+
+-- Função para mover e calcular a pontuação resultante das mesclas
+moverComPontuacao :: Tabuleiro -> (Tabuleiro -> Tabuleiro) -> (Tabuleiro, Int)
+moverComPontuacao tabuleiro movimento = 
+    let novoTabuleiro = movimento tabuleiro
+        scoreIncrement = calculaScore tabuleiro novoTabuleiro
+    in (novoTabuleiro, scoreIncrement)
+
+-------------------------------------------------------------------------------------------------------------------
 
 janela :: Int -> Display
 janela tamanho = InWindow "2048" (truncate $ tamanhoJanela tamanho, truncate $ tamanhoJanela tamanho) (0, 0)
