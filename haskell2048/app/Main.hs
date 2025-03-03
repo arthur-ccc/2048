@@ -6,7 +6,7 @@ import Tabuleiro
 import Peca
 
 
-data Jogo = HUB | Dificuldade | Partida Tabuleiro Int Int | GameOver Int
+data Jogo = HUB | Dificuldade | Partida Tabuleiro Int | GameOver Int
 
 desenharHUB :: Picture
 desenharHUB = pictures
@@ -23,55 +23,53 @@ desenharTelaDificuldade = pictures [
     , translate (-200) (-150) (scale 0.2 0.2 (color white  (text "Pressione 1, 2 ou 3 para escolher")))
     ]
 
-desenharPeca :: Float -> Float -> Peca -> Picture
-desenharPeca posX posY valor =
-    let tamanho = tamanhoCelula * 0.8
+desenharPeca :: Int -> Float -> Float -> Peca -> Picture
+desenharPeca tamanhoJogo posX posY valor =
+    let tamanho = tamanhoCelula tamanhoJogo * 0.8
         in pictures [translate posX posY (color (corPeca valor) $ rectangleSolid tamanho tamanho),
                      translate (posX-15) (posY-20) (color black $ scale 0.4 0.4 $ text $ show valor)]
 
 desenharCelula :: Int -> Int -> Int -> Peca -> Picture -- ajustar para as células diminuires de acordo com o tamanho
-desenharCelula tamanhoTab x y valor = pictures [celula, bordaCelula, peca]
+desenharCelula tamanhoJogo x y valor = pictures [celula, bordaCelula, peca]
     where
-        posX = fromIntegral x * tamanhoCelula - tamanhoJanela tamanhoTab / 2 + tamanhoCelula / 2
-        posY = fromIntegral (tamanhoTab - 1 - y) * tamanhoCelula - tamanhoJanela tamanhoTab / 2 + tamanhoCelula / 2
+        posX = fromIntegral x * tamanhoCelula tamanhoJogo - tamanhoTabuleiroPixels / 2 + tamanhoCelula tamanhoJogo / 2
+        posY = fromIntegral (tamanhoJogo - 1 - y) * tamanhoCelula tamanhoJogo - tamanhoTabuleiroPixels / 2 + tamanhoCelula tamanhoJogo / 2
 
-        celula = translate posX posY $ color (greyN 0.3) $ rectangleSolid tamanhoCelula tamanhoCelula
-        bordaCelula = translate posX posY $ color white $ rectangleWire tamanhoCelula tamanhoCelula
+        celula = translate posX posY $ color (greyN 0.3) $ rectangleSolid (tamanhoCelula tamanhoJogo) (tamanhoCelula tamanhoJogo)
+        bordaCelula = translate posX posY $ color white $ rectangleWire (tamanhoCelula tamanhoJogo) (tamanhoCelula tamanhoJogo)
 
-        peca = if valor >= 2 then desenharPeca posX posY valor else blank
+        peca = if valor >= 2 then desenharPeca tamanhoJogo posX posY valor else blank
 
 desenharTabuleiro :: Tabuleiro -> Picture
-desenharTabuleiro tabuleiro = pictures [desenharCelula (length tabuleiro ) x y (tabuleiro !! y !! x) | y <- [0..length tabuleiro - 1], x <- [0..length tabuleiro - 1]]
+desenharTabuleiro tabuleiro = pictures [desenharCelula (length tabuleiro) x y (tabuleiro !! y !! x) | y <- [0..length tabuleiro - 1], x <- [0..length tabuleiro - 1]]
 
-desenharPontuacao :: Int -> Int -> Picture
-desenharPontuacao tamanhoTab pontuacao =
-    translate posX posY $ scale 0.5 0.5 $ color white $ text ("Score: " ++ show pontuacao)
+desenharPontuacao :: Int -> Picture
+desenharPontuacao pontuacao =
+    translate posX posY $ scale 0.4 0.4 $ color white $ text ("Score: " ++ show pontuacao)
     where
-        posX = -(tamanhoJanela tamanhoTab / 2 + 20)
-        posY = tamanhoJanela tamanhoTab / 2 - 50
+        posX = 50 + tamanhoTabuleiroPixels / 2
+        posY = tamanhoTabuleiroPixels / 2 - 50
 
-desenharPartida :: Tabuleiro -> Int -> Int -> Picture
-desenharPartida tabuleiro tamanho pontuacao = pictures [desenharTabuleiro tabuleiro, desenharPontuacao tamanho pontuacao] -- !!! modificar desenharTabuleiro !!!
+desenharPartida :: Tabuleiro -> Int -> Picture
+desenharPartida tabuleiro pontuacao = pictures [desenharTabuleiro tabuleiro, desenharPontuacao pontuacao] -- !!! modificar desenharTabuleiro !!!
 
-desenharGameOver :: Int -> Picture
-desenharGameOver tamanho =
-    let tamanhoTabuleiroEmPixels = fromIntegral tamanho * tamanhoCelula
-        posX = -tamanhoTabuleiroEmPixels
-        posY = tamanhoTabuleiroEmPixels / 2
+desenharGameOver :: Picture
+desenharGameOver =
+    let 
         textoGameOver = scale 0.6 0.6 $ text "GAME OVER"
         corTexto = color red
         deslocamentos = [(dx, dy) | dx <- [-2,0,2], dy <- [-2,0,2]]
         textoGrosso = pictures [translate dx dy (corTexto textoGameOver) | (dx, dy) <- deslocamentos]
     in pictures [
-        translate posX posY textoGrosso,
-        translate (posX - 50) (posY - 100) $ color white $ scale 0.3 0.3 $ text "Pressione ENTER para reiniciar"
+        translate (-225) 100 textoGrosso,
+        translate (-275) 0 $ color white $ scale 0.3 0.3 $ text "Pressione ENTER para reiniciar"
     ]
 
 desenharJogo :: Jogo -> IO Picture
 desenharJogo HUB = return desenharHUB
 desenharJogo Dificuldade = return desenharTelaDificuldade
-desenharJogo (Partida tabuleiro tamanho pontuacao) = return $ desenharPartida tabuleiro tamanho pontuacao
-desenharJogo (GameOver tamanho) = return $ desenharGameOver tamanho
+desenharJogo (Partida tabuleiro pontuacao) = return $ desenharPartida tabuleiro pontuacao
+desenharJogo (GameOver _) = return desenharGameOver
 
 gameOver :: Tabuleiro -> Bool
 gameOver tabuleiro =
@@ -82,8 +80,8 @@ resetarJogo :: Int -> IO Jogo
 resetarJogo tamanho = do
     let novo = tabuleiroVazio tamanho
     (x, y) <- escolherPosicaoAleatoria novo
-    let tabuleiroInicial = alterarElemTabuleiro novo x y 2
-    return (Partida tabuleiroInicial tamanho 0)
+    let tabuleiroInicial = inserirPecaNova novo x y
+    return (Partida tabuleiroInicial 0)
 
 handleEvent :: Event -> Jogo -> IO Jogo
 handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) HUB = return Dificuldade
@@ -94,60 +92,60 @@ handleEvent (EventKey (Char dificuldade) Down _ _) Dificuldade = do
             let vazio = tabuleiroVazio tamanho
             (x, y) <- escolherPosicaoAleatoria vazio
             let tabuleiroInicial = inserirPecaNova vazio x y
-            return $ Partida tabuleiroInicial tamanho (-1)
+            return $ Partida tabuleiroInicial (-1)
 
         Nothing -> return Dificuldade      -- se mantém na tela de escolha de Dificuldade
 
 handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) (GameOver tamanho) = resetarJogo tamanho
 
-handleEvent (EventKey (SpecialKey KeyUp) Down _ _) (Partida tabuleiro tamanho _) = do
+handleEvent (EventKey (SpecialKey KeyUp) Down _ _) (Partida tabuleiro _) = do
     let movido = moverCima tabuleiro
     if movido == tabuleiro -- movimento não afeta as peças, retorna o tabueiro sem atualizar
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro (-1)
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
             if gameOver novoTabuleiro
-                then return $ GameOver tamanho
-                else return $ Partida novoTabuleiro tamanho (-1)         -- !!! consertar pontuação !!!
+                then return $ GameOver $ length novoTabuleiro
+                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
 
-handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro tamanho _) = do
+handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro _) = do
     let movido = moverBaixo tabuleiro
     if movido == tabuleiro
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro (-1)
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
             if gameOver novoTabuleiro
-                then return $ GameOver tamanho
-                else return $ Partida novoTabuleiro tamanho (-1)         -- !!! consertar pontuação !!!
+                then return $ GameOver $ length novoTabuleiro
+                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
 
-handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro tamanho _) = do
+handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro _) = do
     let movido = moverDireita tabuleiro
     if movido == tabuleiro
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro (-1)
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
             if gameOver novoTabuleiro
-                then return $ GameOver tamanho
-                else return $ Partida novoTabuleiro tamanho (-1)         -- !!! consertar pontuação !!!
+                then return $ GameOver $ length novoTabuleiro
+                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
 
-handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro tamanho _) = do
+handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro _) = do
     let movido = moverEsquerda tabuleiro
     if movido == tabuleiro
-        then return $ Partida tabuleiro tamanho (-1)
+        then return $ Partida tabuleiro (-1)
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
             if gameOver novoTabuleiro
-                then return $ GameOver tamanho
-                else return $ Partida novoTabuleiro tamanho (-1)         -- !!! consertar pontuação !!!
+                then return $ GameOver $ length novoTabuleiro
+                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
 
 handleEvent _ jogo = return jogo -- Ignora o restante do teclado e não faz nada
 
-janela :: Int -> Display
-janela tamanho = InWindow "2048" (truncate $ tamanhoJanela tamanho, truncate $ tamanhoJanela tamanho) (0, 0)
+janela :: Display
+janela = InWindow "2048" (truncate tamanhoTabuleiroPixels * 2, truncate tamanhoTabuleiroPixels) (400, 600)
 
 main :: IO ()
-main = playIO (janela 5) (greyN 0.4) 60 HUB desenharJogo handleEvent (\_ tabuleiro -> return tabuleiro)
+main = playIO janela (greyN 0.2) 60 HUB desenharJogo handleEvent (\_ tabuleiro -> return tabuleiro)

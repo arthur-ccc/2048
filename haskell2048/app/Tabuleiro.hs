@@ -6,11 +6,11 @@ import System.Random (randomRIO)
 
 type Tabuleiro = [[Int]]
 
-tamanhoCelula :: Float
-tamanhoCelula = 200 -- tamanho em pixels
+tamanhoTabuleiroPixels :: Float
+tamanhoTabuleiroPixels = 1000 -- largura = altura
 
-tamanhoJanela :: Int -> Float
-tamanhoJanela tamanhoTabuleiro = tamanhoCelula * fromIntegral tamanhoTabuleiro
+tamanhoCelula :: Int -> Float
+tamanhoCelula tamanhoJogo = tamanhoTabuleiroPixels / fromIntegral tamanhoJogo 
 
 alterarElemTabuleiro :: Tabuleiro -> Int -> Int -> Int -> Tabuleiro
 alterarElemTabuleiro matriz x y novoValor = take x matriz ++ [alterarElemLista (matriz!!x) y novoValor] ++ drop (x+1) matriz
