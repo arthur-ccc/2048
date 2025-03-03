@@ -28,7 +28,7 @@ coordenadasVazias tabuleiro =
         tam = length tabuleiro
 
 temCoordenadaLivre :: Tabuleiro -> Bool
-temCoordenadaLivre tabuleiro = not $ null (coordenadasVazias tabuleiro)
+temCoordenadaLivre tabuleiro = null (coordenadasVazias tabuleiro)
 
 escolherPosicaoAleatoria :: Tabuleiro -> IO (Int, Int)
 escolherPosicaoAleatoria tabuleiro = do
