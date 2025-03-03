@@ -58,15 +58,15 @@ desenharPartida tabuleiro tamanho pontuacao = pictures [desenharTabuleiro tabule
 desenharGameOver :: Int -> Picture
 desenharGameOver tamanho =
     let tamanhoTabuleiroEmPixels = fromIntegral tamanho * tamanhoCelula
-        posX = -(tamanhoTabuleiroEmPixels / 2)
-        posY = -(tamanhoTabuleiroEmPixels / 10)
+        posX = -tamanhoTabuleiroEmPixels
+        posY = tamanhoTabuleiroEmPixels / 2
         textoGameOver = scale 0.6 0.6 $ text "GAME OVER"
         corTexto = color red
         deslocamentos = [(dx, dy) | dx <- [-2,0,2], dy <- [-2,0,2]]
         textoGrosso = pictures [translate dx dy (corTexto textoGameOver) | (dx, dy) <- deslocamentos]
     in pictures [
         translate posX posY textoGrosso,
-        translate (posX - 40) (posY - 40) $ color white $ scale 0.3 0.3 $ text "Pressione ENTER para reiniciar"
+        translate (posX - 50) (posY - 100) $ color white $ scale 0.3 0.3 $ text "Pressione ENTER para reiniciar"
     ]
 
 desenharJogo :: Jogo -> IO Picture
@@ -85,7 +85,7 @@ resetarJogo tamanho = do
     let novo = tabuleiroVazio tamanho
     (x, y) <- escolherPosicaoAleatoria novo
     let tabuleiroInicial = alterarElemTabuleiro novo x y 2
-    return (Partida tabuleiroInicial tamanho 0) -- !!! consertar pontuação !!!
+    return (Partida tabuleiroInicial tamanho 0)
 
 handleEvent :: Event -> Jogo -> IO Jogo
 handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) HUB = return (Dificuldade 0)
@@ -100,14 +100,18 @@ handleEvent (EventKey (Char dificuldade) Down _ _) (Dificuldade _) = do
 
         Nothing -> return (Dificuldade 0)      -- se mantém na tela de escolha de Dificuldade
 
+handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) (GameOver tamanho) = resetarJogo tamanho
+
 handleEvent (EventKey (SpecialKey KeyUp) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
     let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverCima 
-    if movido == tabuleiro                     -- movimento não afeta as peças
+    if movido == tabuleiro -- movimento não afeta as peças, retorna o tabueiro sem atualizar
         then return $ Partida tabuleiro tamanho pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement) -- !!! consertar pontuação !!!
+            if gameOver novoTabuleiro
+                then return $ GameOver tamanho
+                else return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)         -- !!! consertar pontuação !!!
 
 handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
     let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverBaixo 
@@ -116,7 +120,9 @@ handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro tamanho 
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)         -- !!! consertar pontuação !!!
+            if gameOver novoTabuleiro
+                then return $ GameOver tamanho
+                else return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)         -- !!! consertar pontuação !!!
 
 handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
     let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverDireita 
@@ -125,7 +131,9 @@ handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro tamanho
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)  -- !!! consertar pontuação !!!
+            if gameOver novoTabuleiro
+                then return $ GameOver tamanho
+                else return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)        -- !!! consertar pontuação !!!
 
 handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro tamanho pontuacao) = do
     let (movido, scoreIncrement) = moverComPontuacao tabuleiro moverEsquerda 
@@ -134,7 +142,9 @@ handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro tamanho 
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)         -- !!! consertar pontuação !!!
+            if gameOver novoTabuleiro
+                then return $ GameOver tamanho
+                else return $ Partida novoTabuleiro tamanho (pontuacao + scoreIncrement)         -- !!! consertar pontuação !!!
 
 handleEvent _ jogo = return jogo -- Ignora o restante do teclado e não faz nada
 -------------------------------------------------------------------------------------------------------------------
@@ -152,7 +162,7 @@ calculaScore antes depois =
 
     mapaAntes  = buildMap antes
     mapaDepois = buildMap depois
-    
+
     -- Para cada valor presente no mapaDepois, calcula a diferença na contagem
     score = Map.foldrWithKey (\valor cnt acc -> 
               let cntAntes = Map.findWithDefault 0 valor mapaAntes
