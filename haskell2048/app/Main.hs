@@ -68,7 +68,7 @@ desenharGameOver = pictures [textoGameOver, textoReiniciar, textoDificuldade]
         deslocamentos    = [(dx, dy) | dx <- [-2,0,2], dy <- [-2,0,2]]
         textoGrosso      = pictures [translate dx dy (corTexto texto) | (dx, dy) <- deslocamentos]
         textoGameOver    = translate (-225) 100 textoGrosso
-        textoReiniciar   = translate (-275) 0 $ color white $ scale 0.3 0.3 $ text "Pressione 1 para reiniciar"
+        textoReiniciar   = translate (-275) 0     $ color white $ scale 0.3 0.3 $ text "Pressione 1 para reiniciar"
         textoDificuldade = translate (-275) (-50) $ color white $ scale 0.3 0.3 $ text "Pressione 2 para mudar a dificuldade"
 
 desenharVitoria :: Picture
@@ -77,9 +77,9 @@ desenharVitoria = pictures [fundo, textoPrincipal, textoSecundario, textoContinu
         fundo           = color (makeColorI 255 215 0 1) (rectangleSolid tamanhoTabuleiroPixels tamanhoTabuleiroPixels)
         textoPrincipal  = translate (-200) 100    $ scale 0.9 0.9 $ color white $ text "VITORIA! 🏆"
         textoSecundario = translate (-300) 50     $ scale 0.3 0.3 $ color white $ text "Voce conquistou a peca de valor 2048!"
-        textoContinuar  = translate (-300) (-150) $ scale 0.2 0.2 $ color white $ text "Pressione 1 se quiser continuar jogando."
-        textoRecomecar  = translate (-300) (-200) $ scale 0.2 0.2 $ color white $ text "Pressione 2 se quiser recomecar a partida."
-        textoParar      = translate (-300) (-250) $ scale 0.2 0.2 $ color white $ text "Pressione 3 se quiser recomecar a partida."
+        textoContinuar  = translate (-270) (-150) $ scale 0.2 0.2 $ color white $ text "Pressione 1 se quiser continuar jogando"
+        textoRecomecar  = translate (-300) (-200) $ scale 0.2 0.2 $ color white $ text "Pressione 2 se quiser recomecar a partida"
+        textoParar      = translate (-300) (-250) $ scale 0.2 0.2 $ color white $ text "Pressione 3 se quiser mudar a dificuldade"
 
 desenharJogo :: Jogo -> IO Picture
 desenharJogo TelaInicio = return desenharTelaInicio
