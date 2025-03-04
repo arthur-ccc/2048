@@ -6,7 +6,7 @@ import Tabuleiro
 import Peca
 
 
-data Jogo = HUB | Dificuldade | Partida Tabuleiro Int | GameOver Int
+data Jogo = HUB | Dificuldade | Partida Tabuleiro Int | GameOver Int | Vitoria Int
 
 desenharHUB :: Picture
 desenharHUB = pictures
@@ -16,18 +16,18 @@ desenharHUB = pictures
 
 desenharTelaDificuldade :: Picture
 desenharTelaDificuldade = pictures [
-      translate (-200) 100    (scale 0.5 0.5 (color white  (text "Escolha a Dificuldade")))
+      translate (-300) 100    (scale 0.5 0.5 (color white  (text "Escolha a Dificuldade")))
     , translate (-200) 50     (scale 0.3 0.3 (color green  (text "1 - Facil (4x4)")))
     , translate (-200) 0      (scale 0.3 0.3 (color yellow (text "2 - Medio (5x5)")))
     , translate (-200) (-50)  (scale 0.3 0.3 (color red    (text "3 - Dificil (6x6)")))
-    , translate (-200) (-150) (scale 0.2 0.2 (color white  (text "Pressione 1, 2 ou 3 para escolher")))
+    , translate (-250) (-150) (scale 0.2 0.2 (color white  (text "Pressione 1, 2 ou 3 para escolher")))
     ]
 
 desenharPeca :: Int -> Float -> Float -> Peca -> Picture
 desenharPeca tamanhoJogo posX posY valor =
     let tamanho = tamanhoCelula tamanhoJogo * 0.8
         in pictures [translate posX posY (color (corPeca valor) $ rectangleSolid tamanho tamanho),
-                     translate (posX-15) (posY-20) (color black $ scale 0.4 0.4 $ text $ show valor)]
+                     translate (posX-15) (posY-20) (color white $ scale 0.4 0.4 $ text $ show valor)]
 
 desenharCelula :: Int -> Int -> Int -> Peca -> Picture -- ajustar para as células diminuires de acordo com o tamanho
 desenharCelula tamanhoJogo x y valor = pictures [celula, bordaCelula, peca]
@@ -65,11 +65,25 @@ desenharGameOver =
         translate (-275) 0 $ color white $ scale 0.3 0.3 $ text "Pressione ENTER para reiniciar"
     ]
 
+desenharVitoria :: Picture
+desenharVitoria =
+    let 
+        fundo = color (makeColorI 255 215 0 1) (rectangleSolid tamanhoTabuleiroPixels tamanhoTabuleiroPixels)
+        textoPrincipal = translate (-250) 100 $ scale 0.9 0.9 $ color white $ text "Parabens! 🏆"
+        textoSecundario = translate (-350) 50 $ scale 0.3 0.3 $ color white $ text "Voce atingiu a peca de valor 2048!"
+        textoMenu = translate (-275) (-150) $ scale 0.2 0.2 $ color white $ text "Pressione ENTER para voltar ao menu principal."
+    in pictures [fundo, textoPrincipal, textoSecundario, textoMenu]
+
 desenharJogo :: Jogo -> IO Picture
 desenharJogo HUB = return desenharHUB
 desenharJogo Dificuldade = return desenharTelaDificuldade
 desenharJogo (Partida tabuleiro pontuacao) = return $ desenharPartida tabuleiro pontuacao
 desenharJogo (GameOver _) = return desenharGameOver
+desenharJogo (Vitoria _) = return desenharVitoria
+
+
+verificaVitoria :: Tabuleiro -> Bool
+verificaVitoria tabuleiro = any (elem 2048) tabuleiro
 
 gameOver :: Tabuleiro -> Bool
 gameOver tabuleiro =
@@ -88,61 +102,71 @@ handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) HUB = return Dificuldade
 
 handleEvent (EventKey (Char dificuldade) Down _ _) Dificuldade = do
     case escolhaTabuleiro dificuldade of
-        Just tamanho -> do                     -- incia o jogo com um tabuleiro novo
+        Just tamanho -> do
             let vazio = tabuleiroVazio tamanho
             (x, y) <- escolherPosicaoAleatoria vazio
             let tabuleiroInicial = inserirPecaNova vazio x y
-            return $ Partida tabuleiroInicial (-1)
+            return $ Partida tabuleiroInicial 0
+        Nothing -> return Dificuldade  
 
-        Nothing -> return Dificuldade      -- se mantém na tela de escolha de Dificuldade
+handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) (GameOver _) = return HUB
+handleEvent (EventKey (SpecialKey KeySpace) Down _ _) (GameOver tamanho) = resetarJogo tamanho
 
-handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) (GameOver tamanho) = resetarJogo tamanho
+handleEvent (EventKey (SpecialKey KeyEnter) Down _ _) (Vitoria _) = return HUB
 
-handleEvent (EventKey (SpecialKey KeyUp) Down _ _) (Partida tabuleiro _) = do
+handleEvent (EventKey (SpecialKey KeyUp) Down _ _) (Partida tabuleiro pontuacao) = do
     let movido = moverCima tabuleiro
-    if movido == tabuleiro -- movimento não afeta as peças, retorna o tabueiro sem atualizar
-        then return $ Partida tabuleiro (-1)
+    if movido == tabuleiro
+        then return $ Partida tabuleiro pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            if gameOver novoTabuleiro
-                then return $ GameOver $ length novoTabuleiro
-                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
+            if verificaVitoria novoTabuleiro
+                then return $ Vitoria (length novoTabuleiro)
+                else if gameOver novoTabuleiro
+                    then return $ GameOver (length novoTabuleiro)
+                    else return $ Partida novoTabuleiro (pontuacao + 1)
 
-handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro _) = do
+handleEvent (EventKey (SpecialKey KeyDown) Down _ _) (Partida tabuleiro pontuacao) = do
     let movido = moverBaixo tabuleiro
     if movido == tabuleiro
-        then return $ Partida tabuleiro (-1)
+        then return $ Partida tabuleiro pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            if gameOver novoTabuleiro
-                then return $ GameOver $ length novoTabuleiro
-                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
+            if verificaVitoria novoTabuleiro
+                then return $ Vitoria (length novoTabuleiro)
+                else if gameOver novoTabuleiro
+                    then return $ GameOver (length novoTabuleiro)
+                    else return $ Partida novoTabuleiro (pontuacao + 1)
 
-handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro _) = do
+handleEvent (EventKey (SpecialKey KeyRight) Down _ _) (Partida tabuleiro pontuacao) = do
     let movido = moverDireita tabuleiro
     if movido == tabuleiro
-        then return $ Partida tabuleiro (-1)
+        then return $ Partida tabuleiro pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            if gameOver novoTabuleiro
-                then return $ GameOver $ length novoTabuleiro
-                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
+            if verificaVitoria novoTabuleiro
+                then return $ Vitoria (length novoTabuleiro)
+                else if gameOver novoTabuleiro
+                    then return $ GameOver (length novoTabuleiro)
+                    else return $ Partida novoTabuleiro (pontuacao + 1)
 
-handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro _) = do
+handleEvent (EventKey (SpecialKey KeyLeft) Down _ _) (Partida tabuleiro pontuacao) = do
     let movido = moverEsquerda tabuleiro
     if movido == tabuleiro
-        then return $ Partida tabuleiro (-1)
+        then return $ Partida tabuleiro pontuacao
         else do
             (x, y) <- escolherPosicaoAleatoria movido
             let novoTabuleiro = inserirPecaNova movido x y
-            if gameOver novoTabuleiro
-                then return $ GameOver $ length novoTabuleiro
-                else return $ Partida novoTabuleiro (-1)         -- !!! consertar pontuação !!!
+            if verificaVitoria novoTabuleiro
+                then return $ Vitoria (length novoTabuleiro)
+                else if gameOver novoTabuleiro
+                    then return $ GameOver (length novoTabuleiro)
+                    else return $ Partida novoTabuleiro (pontuacao + 1)
 
-handleEvent _ jogo = return jogo -- Ignora o restante do teclado e não faz nada
+handleEvent _ jogo = return jogo
 
 janela :: Display
 janela = InWindow "2048" (truncate tamanhoTabuleiroPixels * 2, truncate tamanhoTabuleiroPixels) (400, 600)
