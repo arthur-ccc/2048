@@ -67,6 +67,7 @@ executable haskell2048
     build-depends:    base >=4.7 && <5
                     , gloss >=1.13.2.2
                     , random >= 1.2.0 && < 1.4.0
+                    , containers >= 0.6 && < 0.8
 
     -- Directories containing source files.
     hs-source-dirs:   app
