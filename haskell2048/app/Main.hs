@@ -237,4 +237,4 @@ janela :: Display
 janela = InWindow "2048" (truncate tamanhoTabuleiroPixels * 2, truncate tamanhoTabuleiroPixels * 2) (400, 600)
 
 main :: IO ()
-main = playIO janela (greyN 0.2) 60 (GameOver 5) desenharJogo handleEvent (\_ tabuleiro -> return tabuleiro)
+main = playIO janela (greyN 0.2) 60 TelaInicio desenharJogo handleEvent (\_ tabuleiro -> return tabuleiro)
