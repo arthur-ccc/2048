@@ -60,6 +60,16 @@ desenharPontuacao pontuacao = textoPontuacao
 desenharPartida :: Tabuleiro -> Int -> Picture
 desenharPartida tabuleiro pontuacao = pictures [desenharTabuleiro tabuleiro, desenharPontuacao pontuacao]
 
+desenharVitoria :: Picture
+desenharVitoria = pictures [fundo, textoPrincipal, textoSecundario, textoContinuar, textoRecomecar, textoParar]
+    where
+        fundo           = color (makeColorI 255 215 0 1) (rectangleSolid tamanhoTabuleiroPixels tamanhoTabuleiroPixels)
+        textoPrincipal  = translate (-200) 100    $ scale 0.9 0.9 $ color white $ text "VITORIA! 🏆"
+        textoSecundario = translate (-350) 50     $ scale 0.3 0.3 $ color white $ text "Voce conquistou a peca de valor 2048!"
+        textoContinuar  = translate (-270) (-150) $ scale 0.2 0.2 $ color white $ text "Pressione 1 se quiser continuar jogando"
+        textoRecomecar  = translate (-290) (-200) $ scale 0.2 0.2 $ color white $ text "Pressione 2 se quiser recomecar a partida"
+        textoParar      = translate (-285) (-250) $ scale 0.2 0.2 $ color white $ text "Pressione 3 se quiser mudar a dificuldade"
+
 desenharGameOver :: Picture
 desenharGameOver = pictures [textoGameOver, textoReiniciar, textoDificuldade]
     where
@@ -68,25 +78,15 @@ desenharGameOver = pictures [textoGameOver, textoReiniciar, textoDificuldade]
         deslocamentos    = [(dx, dy) | dx <- [-2,0,2], dy <- [-2,0,2]]
         textoGrosso      = pictures [translate dx dy (corTexto texto) | (dx, dy) <- deslocamentos]
         textoGameOver    = translate (-225) 100 textoGrosso
-        textoReiniciar   = translate (-275) 0     $ color white $ scale 0.3 0.3 $ text "Pressione 1 para reiniciar"
-        textoDificuldade = translate (-275) (-50) $ color white $ scale 0.3 0.3 $ text "Pressione 2 para mudar a dificuldade"
-
-desenharVitoria :: Picture
-desenharVitoria = pictures [fundo, textoPrincipal, textoSecundario, textoContinuar, textoRecomecar, textoParar]
-    where
-        fundo           = color (makeColorI 255 215 0 1) (rectangleSolid tamanhoTabuleiroPixels tamanhoTabuleiroPixels)
-        textoPrincipal  = translate (-200) 100    $ scale 0.9 0.9 $ color white $ text "VITORIA! 🏆"
-        textoSecundario = translate (-300) 50     $ scale 0.3 0.3 $ color white $ text "Voce conquistou a peca de valor 2048!"
-        textoContinuar  = translate (-270) (-150) $ scale 0.2 0.2 $ color white $ text "Pressione 1 se quiser continuar jogando"
-        textoRecomecar  = translate (-300) (-200) $ scale 0.2 0.2 $ color white $ text "Pressione 2 se quiser recomecar a partida"
-        textoParar      = translate (-300) (-250) $ scale 0.2 0.2 $ color white $ text "Pressione 3 se quiser mudar a dificuldade"
+        textoReiniciar   = translate (-230) 0     $ color white $ scale 0.3 0.3 $ text "Pressione 1 para reiniciar"
+        textoDificuldade = translate (-330) (-50) $ color white $ scale 0.3 0.3 $ text "Pressione 2 para mudar a dificuldade"
 
 desenharJogo :: Jogo -> IO Picture
 desenharJogo TelaInicio = return desenharTelaInicio
 desenharJogo TelaDificuldade = return desenharTelaDificuldade
 desenharJogo (Partida tabuleiro pontuacao _) = return $ desenharPartida tabuleiro pontuacao
-desenharJogo (GameOver _) = return desenharGameOver
 desenharJogo (Vitoria _ _) = return desenharVitoria
+desenharJogo (GameOver _) = return desenharGameOver
 
 verificaVitoria :: Tabuleiro -> Bool
 verificaVitoria = any (elem 2048)
@@ -237,4 +237,4 @@ janela :: Display
 janela = InWindow "2048" (truncate tamanhoTabuleiroPixels * 2, truncate tamanhoTabuleiroPixels * 2) (400, 600)
 
 main :: IO ()
-main = playIO janela (greyN 0.2) 60 TelaInicio desenharJogo handleEvent (\_ tabuleiro -> return tabuleiro)
+main = playIO janela (greyN 0.2) 60 (GameOver 5) desenharJogo handleEvent (\_ tabuleiro -> return tabuleiro)
