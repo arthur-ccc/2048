@@ -7,7 +7,7 @@ import System.Random (randomRIO)
 type Tabuleiro = [[Int]]
 
 tamanhoTabuleiroPixels :: Float
-tamanhoTabuleiroPixels = 1000 -- largura = altura
+tamanhoTabuleiroPixels = 800 -- largura = altura
 
 tamanhoCelula :: Int -> Float
 tamanhoCelula tamanhoJogo = tamanhoTabuleiroPixels / fromIntegral tamanhoJogo 

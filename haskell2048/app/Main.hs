@@ -234,7 +234,7 @@ moverComPontuacao tabuleiro movimento =
 -------------------------------------------------------------------------------------------------------------------
 
 janela :: Display
-janela = InWindow "2048" (truncate tamanhoTabuleiroPixels * 2, truncate tamanhoTabuleiroPixels * 2) (400, 600)
+janela = InWindow "2048" (1024, 720) (0, 0)
 
 main :: IO ()
 main = playIO janela (greyN 0.2) 60 TelaInicio desenharJogo handleEvent (\_ tabuleiro -> return tabuleiro)
