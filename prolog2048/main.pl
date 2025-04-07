@@ -18,7 +18,7 @@ event(GameWindow, Ev:event) :->
 :- pce_end_class(game_window).
 
 % inicia o joguinho my friends
-start_game :-
+start :-
     retractall(tabuleiro(_)),
     initial_board(Board),
     assertz(tabuleiro(Board)),
