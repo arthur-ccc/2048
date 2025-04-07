@@ -1,5 +1,6 @@
 :- use_module(library(pce)).
 :- dynamic tabuleiro/1.
+:- dynamic score/1.
 
 cell_size(100). % tamanho das células
 grid_size(4). % tamanho inicial do game
@@ -20,10 +21,12 @@ event(GameWindow, Ev:event) :->
 % inicia o joguinho my friends
 start :-
     retractall(tabuleiro(_)),
+    retractall(score(_)),              % limpa score antigo
+    assertz(score(0)),                 % score inicial
     initial_board(Board),
     assertz(tabuleiro(Board)),
     new(Window, game_window('2048')),
-    send(Window, size, size(400, 400)),
+    send(Window, size, size(400, 420)),   % um pouco maior pra mostrar o score
     send(Window, open),
     new(FocusBox, box(1,1)),
     send(FocusBox, pen, 0),
@@ -66,9 +69,9 @@ replace_nth(Idx, List, Elem, NewList) :-
     append(Before, [Elem|After], NewList).
 
 % move as peças de uma linha para a esquerda
-move_row_left(Row, NewRow) :-
+move_row_left(Row, NewRow, Points) :-
     exclude(=(0), Row, NoZeros),          % remove os zeros
-    combine(NoZeros, Combined),           % funde os valores iguais
+    combine(NoZeros, Combined, Points),    % funde os valores iguais
     length(Row, N),
     length(Combined, L),
     M is N - L,
@@ -77,8 +80,13 @@ move_row_left(Row, NewRow) :-
     append(Combined, Padding, NewRow).    % completa com zeros à direita
 
 % move todas as linhas do tabuleiro para a esquerda
-move_left(Board, NewBoard) :-
-    maplist(move_row_left, Board, NewBoard).
+move_left(Board, NewBoard, Points) :-
+    maplist(move_row_left_acc, Board, NewBoard, PointList),
+    sum_list(PointList, Points).
+
+% helper pra maplist que aceita 3 args
+move_row_left_acc(Row, NewRow, Points) :-
+    move_row_left(Row, NewRow, Points).
 
 % tranpõe a matriz para poder reaproveitar o a regra mover_esquerda
 transpose([[]|_], []) :- !.
@@ -90,40 +98,43 @@ transpose(Matrix, [Row|Rest]) :-
 remove_head([_|T], T).
 
 % mover para direita
-move_right(Board, NewBoard) :-
+move_right(Board, NewBoard, Points) :-
     maplist(reverse, Board, Rev),
-    move_left(Rev, Moved),
+    move_left(Rev, Moved, Points),
     maplist(reverse, Moved, NewBoard).
 
 % mover para cima
-move_up(Board, NewBoard) :-
+move_up(Board, NewBoard, Points) :-
     transpose(Board, T),
-    move_left(T, Moved),
+    move_left(T, Moved, Points),
     transpose(Moved, NewBoard).
-
+    
 % mover para baixo
-move_down(Board, NewBoard) :-
+move_down(Board, NewBoard, Points) :-
     transpose(Board, T),
-    move_right(T, Moved),
+    move_right(T, Moved, Points),
     transpose(Moved, NewBoard).
 
 % mescla
-combine([], []).
-combine([X], [X]).
-combine([X,X|T], [Y|Rest]) :-
+combine([], [], 0).
+combine([X], [X], 0).
+combine([X, X | T], [Y | Rest], Score) :-
     Y is X + X,
-    combine(T, Rest).
-combine([X,Y|T], [X|Rest]) :-
+    combine(T, Rest, RestScore),
+    Score is RestScore + Y.
+combine([X, Y | T], [X | Rest], Score) :-
     X \= Y,
-    combine([Y|T], Rest).
+    combine([Y | T], Rest, Score).
+
 
 % pega os eventos do teclado, ou seja, setinhas
 handle_key(Window, Key) :-
     tabuleiro(OldBoard),
-    move_board(Key, OldBoard, MovedBoard),
+    move_board(Key, OldBoard, MovedBoard, Points),
     ( MovedBoard \= OldBoard ->
         place_random_piece(MovedBoard, NewBoard),
-        get_merged_positions(OldBoard, MovedBoard, Merged),
+        update_score(Points),
+        get_merged_positions(OldBoard, MovedBoard, Merged), 
         retractall(tabuleiro(_)),
         assertz(tabuleiro(NewBoard)),
         send(Window, clear),
@@ -131,14 +142,15 @@ handle_key(Window, Key) :-
     ; true).
 
 % logica de movimento
-move_board(cursor_left,  B, NB) :- move_left(B, NB).
-move_board(cursor_right, B, NB) :- move_right(B, NB).
-move_board(cursor_up,    B, NB) :- move_up(B, NB).
-move_board(cursor_down,  B, NB) :- move_down(B, NB).
+move_board(cursor_left,  B, NB, P) :- move_left(B, NB, P).
+move_board(cursor_right, B, NB, P) :- move_right(B, NB, P).
+move_board(cursor_up,    B, NB, P) :- move_up(B, NB, P).
+move_board(cursor_down,  B, NB, P) :- move_down(B, NB, P).
 
 % desenhao tabuleiro
 draw_board(Window, MergedPositions) :-
     tabuleiro(Board),
+    draw_score(Window),
     draw_grid(Window),
     draw_tiles(Window, Board, 0, MergedPositions).
 
@@ -179,12 +191,16 @@ draw_tiles(Window, [Row|Rest], RowIndex, Merged) :-
     NextRow is RowIndex + 1,
     draw_tiles(Window, Rest, NextRow, Merged).
 
+% desenha a pontuacao
+draw_score(Window) :-
+    score(Score),
+    format(atom(ScoreText), 'Score: ~w', [Score]),
+    new(Text, text(ScoreText)),
+    send(Text, font, font(helvetica, bold, 20)),
+    send(Window, display, Text, point(10, 400)).  % aparece abaixo do grid
 
 % caso base
 draw_tile(_, _, _, 0, _) :- !.  % não desenha se for 0
-% preenche uma peça
-draw_tile(Window, Row, Col, Value) :-
-    draw_tile(Window, Row, Col, Value, false).
 % caso pro Value =:= none
 draw_tile(Window, Row, Col, Value, none) :-
     cell_size(S),
@@ -223,7 +239,9 @@ draw_tile(Window, Row, Col, Value, fused) :-
     Xtxt is X + S // 2 - 10,
     Ytxt is Y + S // 2 - 10,
     send(Window, display, Txt, point(Xtxt, Ytxt)).
-
+% preenche uma peça
+draw_tile(Window, Row, Col, Value) :-
+    draw_tile(Window, Row, Col, Value, false).
 
 % faz a animação da peça crescendo aos poucos
 animate_grow(Box, X, Y, FinalSize) :-
@@ -271,3 +289,13 @@ tile_color(512,  '#edc850').
 tile_color(1024, '#edc53f').
 tile_color(2048, '#edc22e').
 tile_color(_,    '#3c3a32').  % outros valores
+
+
+% Atualiza a pontuacao
+update_score(Points) :-
+    score(Old),
+    New is Old + Points,
+    retractall(score(_)),
+    assertz(score(New)).
+
+
