@@ -2,7 +2,7 @@
 :- dynamic tabuleiro/1.
 :- dynamic score/1.
 
-cell_size(100). % tamanho das células
+cell_size(150). % tamanho das células
 grid_size(4). % tamanho inicial do game
 
 % Classe customizada para tratar eventos de teclado
@@ -26,7 +26,7 @@ start :-
     initial_board(Board),
     assertz(tabuleiro(Board)),
     new(Window, game_window('2048')),
-    send(Window, size, size(400, 420)),   % um pouco maior pra mostrar o score
+    send(Window, size, size(1920, 1080)),   % um pouco maior pra mostrar o score
     send(Window, open),
     new(FocusBox, box(1,1)),
     send(FocusBox, pen, 0),
@@ -138,8 +138,17 @@ handle_key(Window, Key) :-
         retractall(tabuleiro(_)),
         assertz(tabuleiro(NewBoard)),
         send(Window, clear),
-        draw_board(Window, Merged)
+        draw_board(Window, Merged),
+        (game_over(NewBoard) -> 
+            send(Window, display, text('Game Over!'), point(100, 100))
+        ; true)
     ; true).
+
+game_over(Board) :-
+    \+ (move_left(Board, NewBoard, _), Board \= NewBoard),
+    \+ (move_right(Board, NewBoard, _), Board \= NewBoard),
+    \+ (move_up(Board, NewBoard, _), Board \= NewBoard),
+    \+ (move_down(Board, NewBoard, _), Board \= NewBoard).
 
 % logica de movimento
 move_board(cursor_left,  B, NB, P) :- move_left(B, NB, P).
@@ -197,27 +206,31 @@ draw_score(Window) :-
     format(atom(ScoreText), 'Score: ~w', [Score]),
     new(Text, text(ScoreText)),
     send(Text, font, font(helvetica, bold, 20)),
-    send(Window, display, Text, point(10, 400)).  % aparece abaixo do grid
+    send(Window, display, Text, point(10, 620)).  % aparece abaixo do grid
 
 % caso base
 draw_tile(_, _, _, 0, _) :- !.  % não desenha se for 0
 % caso pro Value =:= none
-draw_tile(Window, Row, Col, Value, none) :-
+draw_tile(Window, Row, Col, Value, _) :-
     cell_size(S),
-    X is Col * S,
-    Y is Row * S,
+    X is Col * S + 2,  % +2 para margem interna (evita transbordar)
+    Y is Row * S + 2,  % +2 para margem interna
+    EffectiveSize is S - 4,  % Reduz o tamanho para caber na célula
     tile_color(Value, Color),
-    new(Box, box(S, S)),
+    new(Box, box(EffectiveSize, EffectiveSize)),  % Usa o tamanho ajustado
     send(Box, fill_pattern, colour(Color)),
     send(Box, pen, 1),
     send(Box, colour, black),
     send(Window, display, Box, point(X, Y)),
-    atom_string(Value, Str),
-    new(Txt, text(Str)),
-    send(Txt, font, font(helvetica, bold, 20)),
-    Xtxt is X + S // 2 - 10,
-    Ytxt is Y + S // 2 - 10,
-    send(Window, display, Txt, point(Xtxt, Ytxt)).
+    (Value \= 0 ->  % Só desenha texto se não for 0
+        atom_string(Value, Str),
+        new(Txt, text(Str)),
+        send(Txt, font, font(helvetica, bold, 20)),
+        Xtxt is X + EffectiveSize // 2 - 10,  % Centraliza texto
+        Ytxt is Y + EffectiveSize // 2 - 10,
+        send(Window, display, Txt, point(Xtxt, Ytxt))
+    ; true).
+
 % versão com animação pra os outros valores caso tenham se fundido
 draw_tile(Window, Row, Col, Value, fused) :-
     Value > 0,  % só anima valores válidos
@@ -247,7 +260,10 @@ draw_tile(Window, Row, Col, Value) :-
 animate_grow(Box, X, Y, FinalSize) :-
     Steps = 10,
     MaxSize is FinalSize,
-    StepSize is MaxSize // Steps,
+    (MaxSize > 0 -> 
+        StepSize is MaxSize // Steps
+    ; StepSize = 0
+    ),
     animate_step(Box, X, Y, StepSize, 1, Steps).
     
 % gera cada 'frame' da animação da peça crescendo
@@ -297,5 +313,3 @@ update_score(Points) :-
     New is Old + Points,
     retractall(score(_)),
     assertz(score(New)).
-
-
