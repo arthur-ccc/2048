@@ -174,8 +174,13 @@ draw_grid(Window) :-
 % desenha cada peça
 draw_cell(Window, Row, Col) :-
     cell_size(S),
-    X is Col * S,
-    Y is Row * S,
+    grid_size(N),
+    TotalSize is N * S,                % Tamanho total do tabuleiro (N x N células)
+    WinWidth = 1920, WinHeight = 1080, % Dimensões da janela
+    OffsetX is (WinWidth - TotalSize) // 2,  % Offset para centralizar horizontalmente
+    OffsetY is (WinHeight - TotalSize) // 2, % Offset para centralizar verticalmente
+    X is OffsetX + Col * S,            % Posição X com offset
+    Y is OffsetY + Row * S,            % Posição Y com offset
     new(Box, box(S, S)),
     send(Box, fill_pattern, colour(white)),
     send(Box, pen, 1),
@@ -203,30 +208,42 @@ draw_tiles(Window, [Row|Rest], RowIndex, Merged) :-
 % desenha a pontuacao
 draw_score(Window) :-
     score(Score),
+    cell_size(S),
+    grid_size(N),
+    TotalSize is N * S,
+    WinWidth = 1920,
+    OffsetX is (WinWidth - TotalSize) // 2,
+    OffsetY is (1080 - TotalSize) // 2,
+    ScoreY is OffsetY - 50,  % Posiciona 50 pixels acima do tabuleiro
     format(atom(ScoreText), 'Score: ~w', [Score]),
     new(Text, text(ScoreText)),
     send(Text, font, font(helvetica, bold, 20)),
-    send(Window, display, Text, point(10, 620)).  % aparece abaixo do grid
+    send(Window, display, Text, point(OffsetX, ScoreY)).  % Alinha com o tabuleiro
 
 % caso base
 draw_tile(_, _, _, 0, _) :- !.  % não desenha se for 0
 % caso pro Value =:= none
 draw_tile(Window, Row, Col, Value, _) :-
     cell_size(S),
-    X is Col * S + 2,  % +2 para margem interna (evita transbordar)
-    Y is Row * S + 2,  % +2 para margem interna
-    EffectiveSize is S - 4,  % Reduz o tamanho para caber na célula
+    grid_size(N),
+    TotalSize is N * S,
+    WinWidth = 1920, WinHeight = 1080,
+    OffsetX is (WinWidth - TotalSize) // 2,
+    OffsetY is (WinHeight - TotalSize) // 2,
+    X is OffsetX + Col * S + 2,       % +2 para margem interna
+    Y is OffsetY + Row * S + 2,
+    EffectiveSize is S - 4,
     tile_color(Value, Color),
-    new(Box, box(EffectiveSize, EffectiveSize)),  % Usa o tamanho ajustado
+    new(Box, box(EffectiveSize, EffectiveSize)),
     send(Box, fill_pattern, colour(Color)),
     send(Box, pen, 1),
     send(Box, colour, black),
     send(Window, display, Box, point(X, Y)),
-    (Value \= 0 ->  % Só desenha texto se não for 0
+    (Value \= 0 ->
         atom_string(Value, Str),
         new(Txt, text(Str)),
         send(Txt, font, font(helvetica, bold, 20)),
-        Xtxt is X + EffectiveSize // 2 - 10,  % Centraliza texto
+        Xtxt is X + EffectiveSize // 2 - 10,
         Ytxt is Y + EffectiveSize // 2 - 10,
         send(Window, display, Txt, point(Xtxt, Ytxt))
     ; true).
