@@ -140,7 +140,7 @@ handle_key(Window, Key) :-
         send(Window, clear),
         draw_board(Window, Merged),
         (game_over(NewBoard) -> 
-            send(Window, display, text('Game Over!'), point(100, 100))
+        desenha_game_over(Window)
         ; true)
     ; true).
 
@@ -307,7 +307,7 @@ get_merged_positions(OldBoard, NewBoard, MergedPositions) :-
           NewVal =:= OldVal * 2  % só se dobrou!
         ),
         MergedPositions).
-
+  
 % adicionando os frufrus
 tile_color(0,    white).
 tile_color(2,    '#eee4da').
@@ -330,3 +330,31 @@ update_score(Points) :-
     New is Old + Points,
     retractall(score(_)),
     assertz(score(New)).
+
+desenha_game_over(Picture) :-
+    send(Picture, clear),
+    get(Picture, width, Width),
+    get(Picture, height, Height),
+
+    new(Fundo, box(Width, Height)),
+    send(Fundo, colour, grey),
+    send(Picture, display, Fundo, point(0, 0)),
+
+    new(Texto, text('Game Over')),
+    send(Texto, font, font(helvetica, bold, 40)),
+    get(Texto, width, TW),
+    get(Texto, height, TH),
+    TX is (Width - TW) // 2,
+    TY is (Height - TH) // 2 - 40,
+    send(Picture, display, Texto, point(TX, TY)),
+
+    new(Botao, button('Reiniciar', message(@prolog, restart_game))),
+    get(Botao, width, BW),
+    BX is (Width - BW) // 2,
+    BY is TY + 60,
+    send(Picture, display, Botao, point(BX, BY)).
+
+restart_game :-
+    get(@display, frame, Window),
+    send(Window, clear),
+    start.  % reinicia o jogo
