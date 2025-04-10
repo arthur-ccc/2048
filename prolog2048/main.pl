@@ -1,9 +1,10 @@
 :- use_module(library(pce)).
 :- dynamic tabuleiro/1.
 :- dynamic score/1.
+:- dynamic grid_size/1.
 
+grid_size(4).  % valor default
 cell_size(150). % tamanho das células
-grid_size(4). % tamanho inicial do game
 
 % Classe customizada para tratar eventos de teclado
 :- pce_begin_class(game_window, picture).
@@ -15,8 +16,25 @@ event(GameWindow, Ev:event) :->
     ; true
     ).
 
-
 :- pce_end_class(game_window).
+
+% Tela inicial (com escolha de dificuldade)
+start_screen :-
+    new(Screen, dialog('2048 - Escolha a Dificuldade')),
+    send(Screen, append, label(title, 'Escolha a Dificuldade')),
+    send(Screen, append,
+         button('Fácil (4x4)', message(@prolog, start_game_with_size, 4))),
+    send(Screen, append,
+         button('Médio (5x5)', message(@prolog, start_game_with_size, 5))),
+    send(Screen, append,
+         button('Difícil (6x6)', message(@prolog, start_game_with_size, 6))),
+    send(Screen, open_centered).
+
+% Inicializa o jogo com o tamanho de tabuleiro escolhido
+start_game_with_size(Size) :-
+    retractall(grid_size(_)),
+    assertz(grid_size(Size)),
+    start.
 
 % inicia o joguinho my friends
 start :-
@@ -139,8 +157,10 @@ handle_key(Window, Key) :-
         assertz(tabuleiro(NewBoard)),
         send(Window, clear),
         draw_board(Window, Merged),
-        (game_over(NewBoard) -> 
-            send(Window, display, text('Game Over!'), point(100, 100))
+        (venceu(NewBoard) ->
+            desenha_vitoria(Window)
+        ; game_over(NewBoard) ->
+            desenha_game_over(Window)
         ; true)
     ; true).
 
@@ -307,7 +327,7 @@ get_merged_positions(OldBoard, NewBoard, MergedPositions) :-
           NewVal =:= OldVal * 2  % só se dobrou!
         ),
         MergedPositions).
-
+  
 % adicionando os frufrus
 tile_color(0,    white).
 tile_color(2,    '#eee4da').
@@ -330,3 +350,59 @@ update_score(Points) :-
     New is Old + Points,
     retractall(score(_)),
     assertz(score(New)).
+
+desenha_game_over(Picture) :-
+    send(Picture, clear),
+    get(Picture, width, Width),
+    get(Picture, height, Height),
+
+    new(Fundo, box(Width, Height)),
+    send(Fundo, colour, grey),
+    send(Picture, display, Fundo, point(0, 0)),
+
+    new(Texto, text('Game Over')),
+    send(Texto, font, font(helvetica, bold, 40)),
+    get(Texto, width, TW),
+    get(Texto, height, TH),
+    TX is (Width - TW) // 2,
+    TY is (Height - TH) // 2 - 40,
+    send(Picture, display, Texto, point(TX, TY)),
+
+    new(Botao, button('Reiniciar', message(@prolog, restart_game))),
+    get(Botao, width, BW),
+    BX is (Width - BW) // 2,
+    BY is TY + 60,
+    send(Picture, display, Botao, point(BX, BY)).
+
+desenha_vitoria(Picture) :-
+    send(Picture, clear),
+    get(Picture, width, Width),
+    get(Picture, height, Height),
+
+    new(Fundo, box(Width, Height)),
+    send(Fundo, colour, lightgreen),
+    send(Picture, display, Fundo, point(0, 0)),
+
+    new(Texto, text('Parabéns, você venceu! 🎉')),
+    send(Texto, font, font(helvetica, bold, 40)),
+    get(Texto, width, TW),
+    get(Texto, height, TH),
+    TX is (Width - TW) // 2,
+    TY is (Height - TH) // 2 - 40,
+    send(Picture, display, Texto, point(TX, TY)),
+
+    new(Botao, button('Reiniciar', message(@prolog, restart_game))),
+    get(Botao, width, BW),
+    BX is (Width - BW) // 2,
+    BY is TY + 60,
+    send(Picture, display, Botao, point(BX, BY)).
+
+% Jogador vence quando aparece a peça 2048
+venceu(Board) :-
+    member(Row, Board),
+    member(2048, Row).
+
+restart_game :-
+    get(@display, frame, Window),
+    send(Window, clear),
+    start.  % reinicia o jogo
