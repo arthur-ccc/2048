@@ -1,46 +1,79 @@
 :- use_module(library(pce)).
 :- dynamic tabuleiro/1.
 :- dynamic score/1.
+:- dynamic current_screen/1. 
 
 cell_size(150). % tamanho das células
 :- dynamic grid_size/1.
-grid_size(4).
+grid_size(4). %Tamanho default
 
 % Classe customizada para tratar eventos de teclado
 :- pce_begin_class(game_window, picture).
 
 event(GameWindow, Ev:event) :->
     get(Ev, key, Key),
-    ( member(Key, [cursor_left, cursor_right, cursor_up, cursor_down]) ->
-        handle_key(GameWindow, Key)
-    ; true
-    ).
+    (current_screen(menu) ->
+        (Key == enter -> 
+            send(GameWindow, destroy),
+            tela_dificuldade
+        ; true
+        ));
+    (current_screen(dificuldade) ->
+        (member(Key, ['1', '2', '3']) ->
+            set_grid_size(Key),  % Define o tamanho do grid
+            send(GameWindow, destroy),
+            start  
+        ; true)); 
+    (member(Key, [cursor_left, cursor_right, cursor_up, cursor_down]) ->
+        handle_key(GameWindow, Key)  % Lógica normal do jogo
+    ; true).
 
 :- pce_end_class(game_window).
 
 tela_inicial :-
-    new(Janela, picture('2048 - Escolha a Dificuldade')),
-    send(Janela, size, size(600, 400)),
-    send(Janela, open),
+    retractall(current_screen(_)),
+    assertz(current_screen(menu)),
+    new(W, game_window('2048 - Menu Inicial')),  % Usa a mesma classe para eventos
+    send(W, size, size(800, 600)),
+    send(W, background, white),
+    
+    new(Texto2048, text('2048', left, font('helvetica', 60, bold))),
+    send(Texto2048, colour, colour('#f65e3b')),
+    send(W, display, Texto2048, point(50, 50)),
+    
+    new(TextoEnter, text('Pressione enter para continuar', left, font('helvetica', 20, normal))),
+    send(TextoEnter, colour, black),
+    send(W, display, TextoEnter, point(400, 500)),  
+    
+    send(W, open).
 
-    new(Titulo, text('2048')),
-    send(Titulo, font, font(helvetica, bold, 40)),
-    send(Janela, display, Titulo, point(230, 50)),
+set_grid_size('1') :- retractall(grid_size(_)), assertz(grid_size(4)).  
+set_grid_size('2') :- retractall(grid_size(_)), assertz(grid_size(5)).  
+set_grid_size('3') :- retractall(grid_size(_)), assertz(grid_size(6)).  
 
-    new(Facil, button('Facil', message(@prolog, iniciar_jogo, 4))),
-    new(Medio, button('Medio', message(@prolog, iniciar_jogo, 5))),
-    new(Dificil, button('Dificil', message(@prolog, iniciar_jogo, 6))),
-
-    send(Janela, display, Facil, point(250, 120)),
-    send(Janela, display, Medio, point(250, 180)),
-    send(Janela, display, Dificil, point(250, 240)).
-
-iniciar_jogo(Tamanho) :-
-    retractall(grid_size(_)),
-    assertz(grid_size(Tamanho)),
-    get(@display, frame, Janela),
-    send(Janela, destroy),  % fecha a tela inicial
-    start.
+tela_dificuldade :-
+    retractall(current_screen(_)),
+    assertz(current_screen(dificuldade)),
+    new(W, game_window('2048 - Dificuldade')),
+    send(W, size, size(600, 400)),
+    send(W, background, white),
+    
+    new(Titulo, text('Escolha a dificuldade:', center, font('helvetica', 30, bold))),
+    send(W, display, Titulo, point(300, 50)),
+    
+    new(Op1, text('1- Fácil (4x4)', left, font('helvetica', 24, normal))),
+    send(Op1, colour, colour(green)),
+    send(W, display, Op1, point(250, 150)),
+    
+    new(Op2, text('2- Médio (5x5)', left, font('helvetica', 24, normal))),
+    send(Op2, colour, colour(yellow)),
+    send(W, display, Op2, point(250, 200)),
+    
+    new(Op3, text('3- Difícil (6x6)', left, font('helvetica', 24, normal))),
+    send(Op3, colour, colour(red)),
+    send(W, display, Op3, point(250, 250)),
+    
+    send(W, open).
 
 % inicia o joguinho my friends
 start :-
@@ -151,7 +184,7 @@ combine([X, Y | T], [X | Rest], Score) :-
     combine([Y | T], Rest, Score).
 
 
-% pega os eventos do teclado, ou seja, setinhas
+% pega os eventos do teclado (setas)
 handle_key(Window, Key) :-
     tabuleiro(OldBoard),
     move_board(Key, OldBoard, MovedBoard, Points),
@@ -163,10 +196,11 @@ handle_key(Window, Key) :-
         assertz(tabuleiro(NewBoard)),
         send(Window, clear),
         draw_board(Window, Merged),
-        (game_over(NewBoard) -> 
-        desenha_game_over(Window)
-        ; true)
-    ; true).
+        (venceu(NewBoard) ->
+             desenha_vitoria(Window)
+         ; game_over(NewBoard) ->
+             desenha_game_over(Window)
+    ; true)).
 
 game_over(Board) :-
     \+ (move_left(Board, NewBoard, _), Board \= NewBoard),
@@ -378,7 +412,36 @@ desenha_game_over(Picture) :-
     BY is TY + 60,
     send(Picture, display, Botao, point(BX, BY)).
 
+desenha_vitoria(Picture) :-
+     send(Picture, clear),
+     get(Picture, width, Width),
+     get(Picture, height, Height),
+ 
+     new(Fundo, box(Width, Height)),
+     send(Fundo, colour, lightgreen),
+     send(Picture, display, Fundo, point(0, 0)),
+ 
+     new(Texto, text('Parabéns, você venceu! 🎉')),
+     send(Texto, font, font(helvetica, bold, 40)),
+     get(Texto, width, TW),
+     get(Texto, height, TH),
+     TX is (Width - TW) // 2,
+     TY is (Height - TH) // 2 - 40,
+     send(Picture, display, Texto, point(TX, TY)),
+ 
+     new(Botao, button('Reiniciar', message(@prolog, restart_game))),
+     get(Botao, width, BW),
+     BX is (Width - BW) // 2,
+     BY is TY + 60,
+     send(Picture, display, Botao, point(BX, BY)).
+ 
+ % Jogador vence quando aparece a peça 2048
+ venceu(Board) :-
+     member(Row, Board),
+     member(2048, Row).
+
+% reinicia o jogo
 restart_game :-
     get(@display, frame, Window),
     send(Window, clear),
-    tela_inicial.  % volta à tela inicial
+    start.
